@@ -1,0 +1,218 @@
+/***************************************************************************
+
+  File:  classes/fm/minbyr.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      fm<Label>& fm<Label>::min_by_rafination()
+
+    min_by_rafination is a public member of the template class fm;
+     (fm is declared in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Ivanescu Denis Octavian               Initial version of source code
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+             fm<Label>& fm<Label>::min_by_rafination()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/fm/fm.h).  Minimizes the fm using Moore's partition rafination
+    algorithm.  The function returns a reference to this fm.
+
+    This function can be called in the following way:
+      this_fm.min_by_rafination();
+
+  Parameters:  none
+
+  Return Value:
+    fm<Label>& - a reference to this fm
+  
+ ***************************************************************************/
+
+template <class Item>
+int is_equal(Item *a, Item *b, int n)
+{
+	int i;
+	if (a == NULL || b == NULL)
+		return 0;
+	for(i = 0; i < n; ++i)
+		if (a[i] != b[i])
+			return 0;
+	return 1;
+}
+template <class Label>
+fm<Label>&
+fm<Label>::min_by_rafination()
+{
+	//canonical_numbering();
+
+	int i, j, h, max,old_max, l, k, n, finals;
+	state *u , *v;
+	set<state> min_states;
+	set<Label> alpha;
+	inst<Label> t;
+
+	labels(alpha);
+	reachable_fm();
+	complete();
+
+	n = number_of_states();
+	k = number_of_labels();
+	finals = number_of_final_states();
+	/* If all the states are non-final or final, one state is enough  */
+	if (finals == 0 || finals == n)
+	{
+		clear();
+		u = new state(5); 
+		min_states += *u;
+		set_starts(min_states);
+		for (i = 0; i < alpha.size(); ++i)
+		{
+			t.assign(*u, alpha[i], *u);
+			add_instruction(t);
+		}
+		if(finals == n)
+			set_finals(min_states);
+		canonical_numbering();
+		unattach();
+		return *this;
+	}
+
+	int * old_partition;
+	int * partition;
+	int * temp;
+
+	attach();
+	old_partition = new int[n];
+	partition = new int[n];
+
+	for (i = 0; i < n; ++i)
+		old_partition[i] = partition[i] = all_states[i]->final();
+
+//	compute partition;
+	int *fishes;
+	int *link;
+	int head;
+	int *prim;
+	int *ultim;
+	
+	old_max =max = 2;//initially, we only have 2 subsets in the partition
+	fishes = new int[n*(k+1)];
+	link = new int[n];
+	do{
+		temp = old_partition;
+		old_partition = partition;
+		partition = temp;
+
+		//algorithm 2: Computing partition from old_partition
+
+		for(i = 0; i < n; ++i)
+		{
+			fishes[i*(k+1)+0] = old_partition[i];
+			int a;
+			for(j = 0; j < all_states[i]->size(); ++j) 
+			{
+				a=(*(all_states[i]))[j].get_sink().value();
+				fishes[i*(k+1)+j+1] = old_partition[a];
+			}
+			link[i] = i+1;
+		}
+		link[n-1]=0;
+		head = 0;
+		prim= new int[max];
+		ultim= new int[max];
+		for(i=0;i<=k;i++)
+		{
+			for(j=0;j<max;j++)
+				prim[j]=ultim[j]=-1;
+			l=head;
+			for(j=0;j<n;j++)
+			{
+				if ( prim[ fishes[l*(k+1)+i] ] == -1)
+					prim[ fishes[l*(k+1)+i] ] = ultim[ fishes[l*(k+1)+i] ] = l;
+				else
+				{
+					link[ ultim[ fishes[l*(k+1)+i]] ] = l;
+					ultim[ fishes[l*(k+1)+i] ] = l;
+				}
+				l = link[l];
+			}
+			h=0;
+			while(prim[h]==-1)
+				h++;
+			head=prim[h];
+			for(j=h+1;j<max;j++)
+				if(prim[j]!=-1)
+				{
+					link[ ultim[h] ] = prim[j];
+					h = j;
+				}
+		}
+		delete[] prim;
+		delete[] ultim;
+
+		h = head;
+		i = 0;
+		partition[h] = i;
+		for(j = 1; j <n; ++j)
+		{
+			if (!is_equal(fishes+(link[h]*(k+1)), fishes+h*(k+1), k+1))
+				i = i+1;
+			partition[link[h]] = i;
+			h = link[h];
+		}
+		old_max = max;
+		max = i+1;//new number of sets in partition
+	}while(max != old_max);
+	//	construct A/~ (the minimal automaton)
+	set<inst<Label> >	min_arcs;		
+	set<state>		min_start_states;	
+	set<state>		min_final_states;
+
+	for(i=0;i<max;i++)
+		min_states+=state(i);
+	h = head;
+	for(i=0;i<n;i++)
+	{
+		u=&(min_states[fishes[h*(k+1)+0]]);
+		for(j=0;j<k;++j)
+		{
+			v=&(min_states[fishes[h*(k+1)+j+1]]);
+			t.assign(*u,alpha[j],*v);
+			min_arcs += t;
+		}
+
+		if( all_states[h]->final() )
+			min_final_states += *u;
+		if( start_states.member ((*(all_states[h]))[0].get_source()) >=0)
+			min_start_states += *u;
+		h=link[h];
+	}
+	
+	arcs = min_arcs;
+	set_starts(min_start_states);
+	set_finals(min_final_states);
+
+/*	~min_final_states;
+	~min_start_states;
+	~arcs;
+*/	delete[] link;
+	delete[] fishes;
+	delete[] partition;
+	delete[] old_partition;
+ 
+//	canonical_numbering();
+//	unattach();
+	attached=0;
+	return *this;
+}

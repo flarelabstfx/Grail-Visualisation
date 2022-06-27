@@ -1,0 +1,244 @@
+# this log file is kind of old it contains the work done for
+# merging various scattered versions of Grail+
+#
+# Bassically it contains done By Andrei Paun and his Team at Louisisana Tech University
+# and the patched applied to those versions at UPEI under the supervision of Cezar Campeanu
+# It also contains the additions and bug fixes done at UPEI between 2003 and 2009
+#
+# In 2011-2012 Rui Zhou(Ray) and Xu Han(Sherry) have implemented this upgraded version,
+# added new filters and fix several known(documented) bugs
+#
+# the latest change is to clean version 3.4 and prepare for a git repository
+#
+#
+
+NEED: 	newest code   ; changes's records    		; fully function & my modification record
+METHOD: choose newest ; document the reason of choice	; mofify & record
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+file source:
+314-new or 335 (because 314 new has the newest in 25 30 314new and 319 , 335 has the highest number in name)
+
+June 18
+
+initial new grail and this file
+import folder makefiles and makefiles inside it, they are made by Ray from old Makefile in 3.1.4-new, they are makefiles for root directory of grail
+import make_Makefile script and batch, they are made by Ray
+generate the dependcy graph for filter fmcomp, too big to finish
+add folder char
+in char
+	import grail.cpp from 335 							(has more if conditions)
+	import include.h lexical.h from 335 						(both are same in 314 and 335)
+	import Makefile from 335 							(cause it has 3 more links generated)
+	import names.h dosnames.h from 335 						(has more info for new filters)
+add folder bin
+add folder classes
+in folder classes
+	add fodler fm
+	in folder fm
+		import include.h from 335						(include "flsubclose.src""shuffle.src""shuffleq.src")
+		import fm.h from 335							(more methods in 335)
+		import assign.src cartensan.src from 314				(both same)
+		import attach.src from 335						(has more comments)
+		import complete.src cross.src from 314					(both same)
+		import compment.src from 335						(#include <iostream>)
+ 		import dfaunion.src disjoint.src enum.src from 314			(both same)
+		import estring.src eq.src flfilter.src from 314				(both same)
+		import flsubclose.src  shuffle.src shuffleq.src from 335		(not exist in 314)
+		import fltofm.src fltofmmn.src iscomp.src from 314			(both same)
+		import fmtofl.src isfinite.src minbyp.src from 335			(partly modified)
+		import isdeterm.src istream.src isuniv.src labels.src from 314		(both same)
+		import maxstat.src  member.src minuseq.src number.src from 314		(both same)
+		import order.src ostream.src plus.src pluseq.src from 314		(both same)
+		import reach.src reach2.src remove.src renumber.src from 314		(both same)
+		import reverse.src ror.src select.src single.src from 314 		(both same)
+		import sinks.src sources.src star.src stats.src from 314 		(both same)
+		import states.src subset.src from 314 					(both same)
+		import parmin.src from 335 						(just space difference)
+		import catenate.src from 335						(delete a line of code)
+		import parMPI.cpp dynarry1.cpp from 335					(both same)
+June 20
+in classes
+	add folder array
+		import include.h array.h defs.h assign.src compare.src from 314		(both same)
+		import contain.src eq.src member.src array.src lt.src from 314  	(both same)
+		import merge.src minuseq.src pluseq.src remove.srcfrom 314		(both same)
+		import sort.src unique.src fistream.src fostream.src from 314		(both same)
+	add folder inst
+		import include.h inst.h std.h defs.h istream.src from 314		(both same)
+		import ostream.src lt.src from 314 					(both same)
+	add folder afa
+		import include.h newlist.h queue.h manage_int.src from 314		(both same)
+		import manage_state.src afa.h afa.src afaios.src from 314		(both same)
+		import same_input_union.src expand.src assign.src from 314		(both same)
+		import afacomplement.src afaintersection.src from 314    		(both same)
+		import afatofm.src afaunion.src fmtoafa.src acceptence.src from 314	(both same)
+		import  reverse.src star.src same_input_nonzero_state_cate.src from 314	(both same)
+		import afacat.src  manage_bitvec.src protot.h from 314			(both same)
+		add folder dnf
+			import term.h function.h termsim.src function.src from 314	(both same)
+			import functios.src substitute.src from 314			(both same)
+	add folder atstate
+		import inlude.h atstate.h atstate.src  from 314				(both same)
+	add folder bits
+		import  include.h bits.h assign.src bits.src clear.src from 314		(both same)
+		import eq.src extract.src gt.src increase.src index.src  from 314	(both same)
+		import iterate.src lt.src member.src ostream.src pluseq.src from 314	(both same)
+	add folder cfg
+		import cfg.h  from 314							(both same)
+	add folder fcm
+		import include.h fcm.h attach.src enum.src fcmtofm  from 314		(both same)
+		import istream.src finlev.src findmax.src from 335			(added new code)
+		import fcmmin.src fltofcm.src fmtofcm.src fmtofcm2.src  from 314	(both same)
+		import member.src ostream.src from 314					(both same)
+	add folder fl
+		import include.h form 335 						(include one more file)
+		import fl.h from 335 							(one more method declared)
+		import alphabet.src from 335 						(not exist in 314)
+		import append.src prepend.src lquot.src timeseq.src  from 314		(both same)
+		import reverse.src rquot.src ostream.src istream.src from 314		(both same)
+	add folder list
+		import include.h list.h from 314					(both same)
+	add folder mealy
+		import include.h assign.src ostream.src dmember.src  from 314		(both same)
+		import member.src select.src mealy.h from 314				(both same)
+	add folder pair
+		import include.h pair.h eq.src istream.src ostream.src lt.src from 314	(both same)
+	add folder pool
+		import include.h pool.h eq.src get.src lt.src return.src from 314	(both same)
+	add folder re
+		import include.h re.h assign.src cat.src from 314			(both same)
+June 21
+		import compare.src fill.src fltore.src fmtore.src  from 314		(both same)
+		import istream.src memory.src ostream.src parse.src from 314		(both same)
+		import pluseq.src print.src retofm.src retofl.src from 314		(both same)
+		import star.src term.src token.src from 314				(both same)
+	add folder set
+		import include.h set.h contain.src eq.src list.src  from 314		(both same)
+		import lt.src intersct.src member.src from 314				(both same)
+		import minuseq.src ostream.src pluseq.src  from 314			(both same)
+	add folder state
+		import include.h state.h istream.src pluseq.src ostream.src from 314	(both same)
+	add folder string
+		import istream.src lt.src ostream.src from 314				(both same)
+		import string.h string.src reverse.src strcmp.src from 314		(both same)
+	import stenum.h from 314
+classes done
+add folder binaries/linux/
+import pmd from 314									(both same)
+
+fisrt compile succeed
+
+
+[modify files by Ray and Sherry:]
+
+in classes/fm:
+	fm.h: add int diff and a method set_diff, for noncanonical numbered fm
+	attach.src: employ diff
+	complete.src employ diff
+in classes/array:
+	add files compare_length.src sort_length.src
+	include.h: added the two files
+        array.h: declare a new method: sort_length()
+in classes/fm:
+	enum.src:use sort_length() to correct output
+
+add folder test
+	add folder unix
+		imported test modified srcipts (correct path, by Ray & Sherry)
+		import test cases
+		correct tests/fmenum/d7 (missed one line)
+		changed fmmin/*
+		changed fmmin/d6
+June 24
+optimize test scripts, they will generate passed and failed record files in the folder tests/
+update test/Makefile to clean passed and failed
+optimize make_Makefile, it is now able to proviede gcc selection options
+modify the char/Makefile, add -lstdc++ for the need of different versions of gcc
+fmcat retofm error fix: modify catenate.src
+June 26
+add tests for fmexec(add fm3test)
+add tests for fmorder(add fm4test)
+add tests for fmsize(use fmtest)
+add tests for fmstats(use fmtest)
+add tests for flappend(add fl3test)
+add tests for fllq(use fl3test)
+add tests for flprepen(use fl3test)
+add tests for flrq(use fl3test)
+
+find filter not implemented: flsubsclose,marked in char/Makefile
+
+june 30
+add tests for afasize(add afatest)
+jul11
+added flsubclose
+jul12
+change diff in fm to a mapping method and an array :map
+add file: class/fm/map.src
+modified associated:fm.h include.h attach.src complete.src minbyp.src order.src
+
+
+jul 15 update the gcc detecting script .
+
+Jul 16 change set::member() to use simply linear search, so enumerate() sequence is kept
+
+jul 18 add fcmexec and fcmenum testcases
+
+{jul 20 modify class/fcm/findlev.src: comment the  pauses and debug infos so they do not pop out during running
+
+jul 26 fcm/findmax.src lead to segfault, change it back to 314 version
+
+jul 30 implement overloaded "=" for fcm, use fcm/findmax.src from 335 again}
+
+add fmtofcm0, but this one is not perfect yet
+
+add -d for fmtofcm0 , attach find_lev, canonical_numbering
+
+jul 30 , 7 new test cases:
+		@unix/fcmtest fcmmin
+		@unix/fcmtest fcmtofm	...ERROR  ...this piece of program does not work well
+		@unix/fltest fltofcm
+		@unix/fmtest fmtofcm
+		@unix/fmtest fmtofcm2
+		@unix/fltest2 flsubclose
+		@unix/fltest fltofmmn	...error ...this piece of program does not work well
+
+afatofm test case need to be verify........
+
+8 2
+make new filter fcmtofm0: this doesn't work on infinite machine?
+
+fm::reduce() is established
+
+fm::useful()
+
+fm::nfatodfa ADDED IN
+8 9
+fm::fmtofcm0 :finished
+
+
+8:10
+change the istream.src so no address errors for atoi in 32 bit systems
+
+set the debug level
+
+
+SET A FILTER NFATODFCA FOR TESTS
+
+8 16
+add -dnc (debug  mode -1) for special debug for nfatodfca, it co-operates with dramfm.java.
+
+# 2013-08-19
+Added new filters for combined operations
+   - fmunionsize   : gives only the size of the union of two fm's
+   - fmunionrsize  : gives only the size of the reduced union of two fm's
+   - fmcatsize     : gives only the size of the concatenation of two fm's
+   - fmcatrsize    : gives only the size of the reduced concatenation of two fm's
+
+
+2014-02-05
+    - removed parmin as parallel computation support creates problems on many systems
+2014-02-07
+    - fixed Grail version
+    - added combined filter nfmtofcm
+    - cosmetic fix, split cerr/std::cout messages in main function

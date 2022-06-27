@@ -1,0 +1,13 @@
+#!/bin/sh
+
+make
+#cp tests/machines/* ./bin/
+cd classes/fmdraw/
+cp drawfm.java ../../bin/
+cd ../../bin
+javac drawfm.java 
+rm drawfm.java
+cd ..
+cp classes/fmdraw/fmdraw bin/
+#cp special_tests/autotest* bin/
+

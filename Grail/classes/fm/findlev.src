@@ -1,0 +1,69 @@
+//#This comes from fcm::findlev.src
+//#include <iostream>
+
+
+template<class Label>
+array<int>
+fm<Label>::find_levels()
+// This function uses a breadth first traversal of the fm to find
+// the level of each state.  This information is returned as an
+// array of integers.
+// A level of -1 indicates that the state is unreachable.
+
+{
+
+
+   array<int> level;
+	set_map();
+	attach();
+
+
+
+	int	maxlen = find_max();
+
+if(debug>0){	std::cout << "maxlen = " << maxlen << std::endl;}
+
+   int n = all_states.size();
+   int i, j, k;
+
+	// Initialize the level array.
+   for (i = 0; i < n; i++)
+      level += -1;
+
+	int level_count = 1;
+
+if(debug>8){std::cout << "level.size() = " << level.size() << std::endl;
+	std::cout << "first start state = " << fm<Label>::start_states[0].value() << std::endl;}
+
+	level[map.member(start_states[0].value())] = 0;
+
+
+	array<int> current, next;
+
+	// We are assuming there is one start state, since there are no
+	// functions dealing with non-deterministic cover automata.
+	current += start_states[0].value();
+
+	while (current.size() > 0)
+	{
+		for (i = 0; i < current.size(); i++)
+			for (j = 0; j < (*all_states[map.member(current[i])]).size(); j++)
+			{
+				k = (*all_states[map.member(current[i])])[j].get_sink().value();
+				if (level[map.member(k)] == -1)
+				{
+					next += k;
+					level[map.member(k)] = level_count;
+				}
+			}
+
+		current = next;
+		next.clear();
+		level_count++;
+
+		if (level_count > maxlen+1)
+			current.clear();
+	}
+	unattach();
+   return level;
+}

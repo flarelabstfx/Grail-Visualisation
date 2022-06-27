@@ -1,0 +1,48 @@
+#SYS=SGI  -using this Makefile if you're using Delta/C++ compiler under IRIX
+
+#SGICC=DCC
+SGICC=CC
+
+#SGIFL = -non_shared -O2 -Olimit 15000 -o grail.out
+SGIFL = -O2 -Olimit 15000 -o grail.out
+
+all:
+#	You may have to remove this line on stupid SGI machines
+#	that barf if they rm nothing
+#
+	@$(MAKE) clean "MAKE=$(MAKE)"
+
+	@$(MAKE) compile TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlyint "MAKE=$(MAKE)"
+	@$(MAKE) install TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install TYPE=re
+#	@$(MAKE) install TYPE=mlychar
+#	@$(MAKE) install TYPE=mlyint
+	@echo "Everything made"
+
+compile_SGI:
+	@cd $(TYPE); $(MAKE) CC='$(SGICC)' CCFLAGS='$(SGIFL)' BIN=../binaries/sgi/
+
+
+install_SGI:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/sgi/ I_BIN=../bin/
+#	@cp char/GrailVersion.txt ${BIN}
+
+checkout:
+	@cd tests; $(MAKE) checkout 
+	@echo "Testing complete."
+
+clean:
+	@cd char; $(MAKE) clean_UNIX
+	@cd re; $(MAKE) clean_UNIX
+	@cd mlychar; $(MAKE) clean_UNIX
+	@cd mlyint; $(MAKE) clean_UNIX
+	@cd tests; $(MAKE) clean
+	@rm -rf bin/* mon.out core tests/errors/* profiles/core
+	@echo "Everything clean."
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

@@ -1,0 +1,146 @@
+//#added in 2010 summber by ray
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent. 
+//	May 1993
+
+
+/***************************************************************************
+
+  File:  classes/fm/reach.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::reachable_fm()
+
+    This function is a public member of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Ray Rui Zhou   2010 summer    initial version
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+                    void fm<Label>::reduce()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/re/fm.h).  Reduce the state set in this fm to states which 
+    are reachable and useful .
+
+    This function can be called in the following way:
+      this_fm.reduce();
+
+  Parameters:  none
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::reduce()
+{
+if (debug>8) {std::cout<<"in fm::reduce, input: "<<std::endl<<*this<<std::endl;}
+
+reachable_fm();
+
+if (debug>8) {std::cout<<"in fm::reduce, after delet non-reachable states "<<std::endl<<*this<<std::endl;}
+
+// if no final states, it ends with a simple machine
+if (final_states.size()==0)
+	{
+if (debug>8){std::cout<<"in fm::reduce, no final states situation occurs"<<std::endl;}
+
+	clear_all();
+	inst<Label> tmparc;
+	tmparc.assign(0,'a',0);  // not char?
+	add_instruction(tmparc);
+	state tmpstate(0);
+	set<state> startset;
+	startset+=tmpstate;
+	set_starts(startset);
+	
+	return;
+	}
+
+useful_fm();
+
+
+
+
+}
+
+// these help methods here are currently not used because of the 
+// new implementation of useful_fm()
+
+template<class Label>
+int
+fm<Label>::toFinal(atstate<Label>& ats)
+{	
+	int toreturn=-1;
+	if (ats.final())
+		toreturn=0;
+	else if (  ( (!ats.final())&&ats.size()==0 ) || is_sink(ats)   )
+		toreturn=-1;
+	else
+	{
+		int sinkNum=ats.size();
+		int sink[sinkNum];
+		for(int n=0;n<sinkNum;n++)
+		{
+		if(! is_sink(       *(all_states[map.member(ats[n].get_sink().value() ) ])          ) )		
+			sink[n]=toFinal(*all_states[map.member(ats[n].get_sink().value())]);
+		else
+			sink[n]=-1;		
+		}
+		for(int n=0;n<sinkNum;n++)
+			{if((sink[n]>=0&&toreturn<0) || (sink[n]>=0&&sink[n]<toreturn) )
+				toreturn=sink[n];		
+			}
+		if (toreturn>-1){toreturn++;}
+	}
+	return toreturn;
+
+	
+}
+
+template<class Label>
+bool 
+fm<Label>::is_sink(atstate<Label>& ats)
+{	
+	bool issink=true;
+
+	
+// final is not sink
+if (ats.final())
+	{issink=false; return issink;}
+
+
+// start is not sink
+if (start_states.member(map[all_states.member(&ats)])>=0)
+	{issink=false; return issink;}
+
+
+
+//see if the transitions of this state goes to another state
+for (int a=0;a<ats.size();a++)
+{
+if ( (ats[a].get_source().value()!=ats[a].get_sink().value())&&  ! is_sink(*(all_states[map.member(ats[a].get_sink().value())]) ) )
+	{issink=false;return issink;}
+
+}
+
+
+return issink;
+	
+}
+
+

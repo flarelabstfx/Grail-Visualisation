@@ -1,0 +1,50 @@
+#SYS=SUN -using this Makefile if you're using USL's Cfront under Sun OS
+
+SUNCC=CC
+#SUNCC=CC
+
+#SUNFL = +i -O2 -DATT -o grail.out
+SUNFL = +i -temp=/grail/drraymon -O2 -DATT -o grail.out
+#SUNFL = +i -temp=/grail/drraymon -g -DATT -o grail.out
+
+all:
+
+	@$(MAKE) clean "MAKE=$(MAKE)"
+
+	@$(MAKE) compile TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlyint "MAKE=$(MAKE)"
+
+	@$(MAKE) install TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install TYPE=re
+#	@$(MAKE) install TYPE=mlychar
+#	@$(MAKE) install TYPE=mlyint
+	@echo "Everything made"
+
+
+
+compile:
+	@cd $(TYPE); $(MAKE) CC='$(SUNCC)' CCFLAGS='$(SUNFL)' BIN=../binaries/sparc/
+
+
+install:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/sparc/ I_BIN=../bin/
+#	@cp char/GrailVersion.txt ${BIN}
+
+checkout:
+	@cd tests; $(MAKE) checkout 
+	@echo "Testing complete."
+
+clean:
+	@cd char; $(MAKE) clean_UNIX
+	@cd re; $(MAKE) clean_UNIX
+	@cd mlychar; $(MAKE) clean_UNIX
+	@cd mlyint; $(MAKE) clean_UNIX
+	@cd tests; $(MAKE) clean
+	@rm -rf bin/* mon.out core tests/errors/* profiles/core
+	@echo "Everything clean."
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

@@ -1,0 +1,258 @@
+
+
+#include <queue>
+//using namespace std;
+
+
+
+template <class Label>
+void
+fm<Label>::fastgap(int  level_to_count)
+{
+
+array<set<state> > partitions;// can not use set cause grail+ set sort elments
+int r=2;
+
+
+set<state> allstates;
+states(allstates);
+
+set<state> tempset1=allstates;
+tempset1-=final_states; // q\f
+
+
+partitions+=tempset1;
+
+partitions+=final_states;
+
+std::queue<node<Label> *> fifo_node;
+std::queue<int > fifo_int;
+
+array<node<Label> *> allnodes;// this stores the tree
+
+node<Label> root;	
+root.states_set=&allstates;
+
+
+
+node<Label> vf;		
+node<Label> vq_f;		
+vf.gap_with_father=0;
+vq_f.gap_with_father=0;
+vf.father=&root;
+vq_f.father=&root;
+root.children+=&vf;
+root.children+=&vq_f;
+
+vf.states_set=&final_states;
+vq_f.states_set=&tempset1;
+
+fifo_node.push(&vf);
+fifo_int.push(1);
+
+
+//root.report();
+//(*(fifo_node.front())).report();
+
+
+//get alphabets
+set<Label> alphabets;
+labels(alphabets);
+
+//allnodes is the place for all nodes
+allnodes+=&root;
+allnodes+=&vf;
+allnodes+=&vq_f;
+
+//compute the pre-gap tree
+while(fifo_node.size()>0)
+{
+
+std::cout<<"~~partitions is"<<std::endl;
+for(int a=0;a<partitions.size();a++)
+	std::cout<<partitions[a];
+std::cout<<std::endl;
+
+
+node<Label>* vq_i= fifo_node.front() ;
+
+std::cout<<"looking at  vq_i";
+vq_i->report();
+
+int ki=fifo_int.front();
+set<state> setq_i= *((*vq_i).states_set);
+
+
+
+fifo_node.pop();
+fifo_int.pop();
+
+for(int i=0;i<alphabets.size();i++)
+        {Label a=alphabets[i];
+        //line8  get qa        
+        set<state> qa;
+        for(int j=0;j<arcs.size();j++)
+                {
+                inst<Label> tempinst=arcs[j];
+                if(tempinst.get_label()==a && setq_i.member(tempinst.get_sink())>=0)
+                        {qa+=tempinst.get_source();}
+                }
+std::cout<<"qa is"<<qa<<std::endl;
+
+
+        int origin_size=partitions.size();
+	//array<set<state> > partitions_del;
+        for(int j=0;j<origin_size;j++)//because the first element in partition is not removed
+						//or we will have address issue
+                {
+		//std::cout<<"before In loopppppp"<<std::endl;
+                set<state> q_ =partitions[j];
+std::cout<<"q_ is"<<q_<<std::endl;
+
+                set<state> inter;
+                inter.intersect(qa,q_);
+                if(qa.contain(q_)!=1 && inter.size()>0)
+                        {
+			//std::cout<<"In loopppppp"<<std::endl;
+                        r+=2;
+			
+			set<state> * qr_1=new set<state>();
+
+                        *qr_1=inter;
+
+			set<state> *qr= new set<state>();
+
+                       *qr=q_; *qr-=final_states;
+                        //partitions_del+=q_;//not remove cause remove will casue the movement in physical address
+			//last_time++;
+			
+		while(partitions.member(q_)>=0)	// remove all existing
+			{partitions-=q_;
+			origin_size--;
+			}
+			j--;
+
+std::cout<<"after remove q_"<<std::endl;
+for(int a=0;a<partitions.size();a++)
+	std::cout<<partitions[a];
+std::cout<<std::endl;
+			if(partitions.member(*qr_1)<0)
+					{partitions+=(*qr_1);}
+			if(partitions.member(*qr)<0)
+					{partitions+=(*qr);}
+std::cout<<"after add qr_1 qr"<<std::endl;
+for(int a=0;a<partitions.size();a++)
+	std::cout<<partitions[a];
+std::cout<<std::endl;
+
+
+			
+
+                      
+
+                        //line 13 create node
+                        node<Label> * vqr_1=new node<Label>();
+                        node<Label> * vqr=new node<Label>();
+                        
+                        (*vqr_1).states_set=qr_1;
+			//second last one, require partition elements address to be fixed
+                        (*vqr).states_set=qr;//lastone
+
+			                        
+			//line 13 create edges
+			
+
+			int k=allnodes.size()-1;
+			//std::cout<<"search"<<q_<<std::endl;
+			while(!( *(allnodes[k]) ).is_node_with_set(q_))
+					{k--;}//get vq_
+
+//debug
+std::cout<<"q_"<<std::endl;
+for (int a=0;a<q_.size();a++)
+{
+std::cout<<"`"<<q_[a];
+}
+//std::cout<<std::endl<<k<<"~"<<std::endl;
+
+
+			(*(allnodes[k])).children+=vqr_1;
+			(*(allnodes[k])).children+=vqr;
+
+		std::cout<<"added node";
+		vqr_1->report();
+		vqr->report();
+			
+			(*vqr_1).father=(allnodes[k]);
+			(*vqr).father=(allnodes[k]);
+
+			(*vqr_1).gap_with_father=ki;
+			(*vqr).gap_with_father=ki;
+
+			allnodes+=vqr_1;
+			allnodes+=vqr;			
+
+
+			if((*qr_1).size()>(*qr).size())
+				{
+				//std::cout<<"Pushing in 111111111111111"<<std::endl;
+				fifo_node.push(vqr);
+				fifo_int.push(ki+1);
+				}
+			else
+				{
+				//std::cout<<"Pushing in 1111111111111112222"<<std::endl;
+				fifo_node.push(vqr_1);
+				fifo_int.push(ki+1);
+				}
+			                      
+                        std::cout<<"1"<<std::endl;
+                        }
+
+ std::cout<<"11"<<std::endl;
+                }
+		
+		
+	//std::cout<<partitions.size()<<"-";
+	
+	//partitions-=partitions_del;
+
+		//int delsize=partitions_del.size();
+		//for(int a=0;a<delsize;a++)
+		//{		
+		//set<state> delset=partitions_del[a];
+		//partitions-=delset;
+		//}
+
+	std::cout<<partitions.size()<<std::endl;
+
+//last_time=origin_size;
+ std::cout<<"111"<<std::endl;
+        }
+
+std::cout<<"1111"<<std::endl;
+}
+
+
+
+//debug
+std::cout<<"final report"<<std::endl;
+
+for (int a=0;a<allnodes.size();a++)
+	allnodes[a]->report();
+std::cout<<"count"<<allnodes.size()<<std::endl;
+
+
+
+//merge the tree
+
+
+
+
+
+///calculate the l-cover automata fast
+
+
+
+
+}

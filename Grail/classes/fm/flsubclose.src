@@ -1,0 +1,134 @@
+//#This comes from Grail-3.3.5
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+/***************************************************************************
+
+  File:  classes/fm/flsubclose.src     Brodie Champion + Marcus Trenton   July 2007
+  --------
+
+  fm<Label> fm<Label>::flsubwordclosure(const fl<Label> &constraint)
+
+  Description:
+    This function computes the subword closure of a regular language.
+	We store the resulting DFA for the shuffle in this fm.
+
+  Parameters:
+    const fl<Label>& a - the subword constraint
+
+  Return Value:  a reference to this fm
+
+ ***************************************************************************/
+//#include <math.h> //For pow
+
+template <class Label>
+fm<Label>  fm<Label>::flsubwordclosure(const fl<Label>& constraint)
+{
+	//Temporary variables for adding instructions
+	state temp_state;
+	inst<Label> temp_instruction;
+
+	//Clears any instructions which may be in this fm
+	clear();
+
+	//Gets the finite language as a set of strings
+	set<string<Label> > words;
+	constraint.get_words(words);
+
+	//Make sure that the language isn't empty
+	if (words.size() == 0){
+
+		std::cerr << "empty language!" << std::endl;
+		exit(-1);
+	}
+
+	//Check that all words in the finite language are of the same length.
+	//Get the length of the first word
+	int word_length = words[0].size();
+
+	//Check that all other words are of the same length
+	for (int i = 1; i < words.size(); i++){
+
+		if (words[i].size() != word_length){
+			std::cerr << "subword constraint error: words have different lengths!" << std::endl;
+			exit(-1);
+		}
+	}
+
+	//Collects the alphabet for the finite language
+	set<Label> alphabet;
+	constraint.get_alphabet(alphabet);
+
+	//Sort the alphabet as well, so machines are easier to read!!
+	alphabet.sort();
+
+	//Calculate the offset: the number of states excluding those in the last level
+	//  we have 1 + a + a^2 + ... + a^(k-2) states. This is [a^(k-1)-1]/(a-1)
+	// [a is alphabet size, k is word length]
+	int offset = (int) ( (pow(alphabet.size(), word_length-1) - 1) / (alphabet.size() - 1) );
+
+	//Now we build a tree with word_length levels which accepts any word of length less
+	//than word length.
+	for (int i = 0; i < offset; i++){
+
+		for (int j = 0; j < alphabet.size(); j++){
+
+			//Add the instruction: state i, with input j, goes to state alphabet_size*i + j.
+			temp_instruction.assign(i, alphabet[j], i*alphabet.size() + j + 1);
+
+			//Don't bother checking to see if this instruction is already there
+			arcs.disjoint_union(temp_instruction);
+		}
+	}
+
+	//Add transitions along the last row!
+	//For each word in the language.
+	for (int i = 0; i < words.size(); i++){
+
+		string<Label> current_word = words[i];
+
+		//Calculate the state which the PREFIX of this string represents
+		//(By prefix, I mean all but the last character)
+		int start = 0;
+
+		for (int j = 0; j < word_length - 1; j++){
+			start = start*alphabet.size() + alphabet.member(current_word[j]) + 1;
+		}
+
+		//Calculate the state which the TAIL of the string represents
+		int end = 0;
+
+		for (int j = 1; j < word_length; j++){
+			end = end*alphabet.size() + alphabet.member(current_word[j]) + 1;
+		}
+
+		//Add this transition to the dfa
+		temp_instruction.assign(start, current_word[word_length-1], end);
+		arcs.disjoint_union(temp_instruction);
+	}
+
+
+	//Our start state is 0
+	temp_state.start();
+	temp_instruction.assign(temp_state, alphabet[0], 0);
+	add_instruction(temp_instruction);
+
+	//Make everything a final state
+	//Calculates the total number of states in the dfa, (1-a^k)/(1-a)
+	//This can be calculated from offset, as (offset-1)*a + a + 1 = offset*a + 1
+	//int num_states = (offset)*alphabet.size() + 1;
+	int num_states = (int) ( (pow(alphabet.size(), word_length) - 1) / (alphabet.size() - 1) );
+	temp_state.final();
+
+	for (int i = 0; i < num_states; i++){
+		temp_instruction.assign(i, alphabet[0], temp_state);
+		add_instruction(temp_instruction);
+	}
+
+	return *this;
+}

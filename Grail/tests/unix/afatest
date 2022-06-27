@@ -1,0 +1,38 @@
+#!/bin/sh
+#	This code copyright (c) by the Grail project.
+#	No commercial use permitted without written consent.
+#	May 1992
+
+#######################################################################
+# add valid path by ray, at UPEI, 2010/MAY/18
+#######################################################################
+
+
+# Absolute path to this script. 
+SCRIPT=$(readlink -f $0)
+# Absolute path this script is in.
+SCRIPTPATH=`dirname $SCRIPT`	
+
+
+
+BIN=$SCRIPTPATH/../../bin
+MACHINES=$SCRIPTPATH/../machines
+ERRORS=$SCRIPTPATH/../errors
+
+for i in afa1 afa2 afa3 afa4 afa5 afa6 afa7 afa8 
+do	
+	echo -n "Testing	$1	on	$i..."
+	$BIN/$1 $MACHINES/$i | sort >$$.tmp 2>/dev/null
+	sort $SCRIPTPATH/../$1/$i >out
+	if diff $$.tmp out
+	then
+		rm $$.tmp
+		echo "results match !"
+		echo "Testing $1 on $i passed !"|cat >> passed
+	else
+		mv $$.tmp ${ERRORS}/$1.$i
+		echo "fail to match, results recorded !"
+		echo "Testing $1 on $i failed !"|cat >> failed
+	fi
+	rm out
+done

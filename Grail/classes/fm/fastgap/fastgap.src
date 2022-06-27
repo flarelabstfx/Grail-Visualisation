@@ -1,0 +1,245 @@
+/*
+This implements
+
+algorithm  for pre gap tree on page 9 of papaer
+
+<<Computing all -cover automata fast>>
+
+*/
+
+
+
+//#include <queue>
+//using namespace std;
+
+template <class Label>
+void
+fm<Label>::fastgap(int  level_to_count)
+{
+//line 1 2 3
+set<state> q1=final_states;
+set<state> q2; states(q2); q2-=final_states;
+
+//array<set<state> > partition; //cause this partiton's sequence matters
+
+
+//to maintain the connection, we always manipulate nodes isntead of using
+//their associated sets in partitions
+
+array<node<Label>* > p;//for partitions
+array<node<Label>* > allnodes;//for recording all the nodes in tree
+
+node<Label> vq; node<Label> vf; node<Label> vq_f;
+
+allnodes+=&vq;
+allnodes+=&vf;
+allnodes+=&vq_f;
+
+set<state> allstates; states(allstates);
+vq.states_set= &allstates;// connection
+vf.states_set=&q1; vq_f.states_set=&q2; //connection
+vf.father=&vq;	vq_f.father=&vq;
+vf.gap_with_father=0;	vq_f.gap_with_father=0;
+vq.children+=&vq_f; vq.children+=&vf;	//children sequence ?
+
+
+std::queue<node<Label> *> fifo_node;
+std::queue<int > fifo_int;
+
+fifo_node.push(&vf);
+fifo_int.push(1);
+
+//add to partiotion
+p+=&vq_f; p+=&vf;
+int r=2;
+
+//line 4: do nothing , we have connections in p
+
+
+
+set<Label> alphabets;
+labels(alphabets);
+//line 5
+//from now on  all the object will be dynamicly allocated
+
+while(fifo_node.size()>0)
+{
+//line 6
+node<Label> * vqi= fifo_node.front();  fifo_node.pop();
+int ki=fifo_int.front();		fifo_int.pop();
+
+
+
+
+/////////////////////////////////////////debug
+//std::cout<<"qi:"<<std::endl;
+//std::cout<< *( vqi->states_set)<<std::endl;
+
+//std::cout<<"partitions:"<<std::endl;
+//for(int db=0;db<p.size();db++)
+	//std::cout<<"@"<<*(p[db]->states_set);
+
+
+
+//line 7
+for(int i=0;i<alphabets.size();i++)
+	{
+	Label a=alphabets[i];
+        //line8  get qa
+        set<state> qa;
+        for(int j=0;j<arcs.size();j++)
+                {
+                inst<Label> tempinst=arcs[j];
+                if(tempinst.get_label()==a && (*(vqi->states_set)).member(tempinst.get_sink())>=0)
+                        {qa+=tempinst.get_source();}
+                }
+
+/////////////////////////////debug
+//std::cout<<std::endl<<"   qa"<<qa;
+
+
+
+	//line 9
+	int origin_size=p.size();
+	for(int j=0;j<origin_size;j++)
+		{
+		node<Label> * vq_=p[j];
+		set<state> q_=*(vq_ ->states_set);
+
+/////////////////////////////debug
+//std::cout<<std::endl<<"       	  q_"<<q_;
+
+
+
+
+		set<state> inter; inter.intersect(qa,q_);
+
+		if(qa.contain(q_) || inter.size()==0)  {continue;}
+
+		//line 10
+		r+=2;
+		//two sets to be reserved outside the scope
+		set<state> * qr_1=new set<state>();
+		set<state> * qr	=new set<state>();
+
+		(*qr_1).intersect(q_,qa);
+		(*qr)=q_; (*qr)-=final_states;
+
+		/*
+		//line 12
+		for(int k=0;k<origin_size;k++)//remove all q_
+			{
+			if( *(p[k]->states_set)==q_)
+				{	p-=p[k];
+					origin_size--;
+				}
+			}
+		j--;//move the pointer back one slot
+		*/
+		// the array will not contain same set cause it is used as a
+		//set with fixed order
+
+
+
+//////////////////////////debug
+//std::cout<<"				partitions before -q_:"<<std::endl;
+//for(int db=0;db<p.size();db++)
+	//std::cout<<"@"<<*(p[db]->states_set);
+
+
+
+		p-=vq_;
+		origin_size--; j--;
+
+//////////////////////////debug
+//std::cout<<"				partitions after -q_:"<<std::endl;
+//for(int db=0;db<p.size();db++)
+	//std::cout<<"@"<<*(p[db]->states_set);
+
+
+
+
+
+		//in order to add partition , creat two nodes;
+		node<Label> * vqr_1 =new node<Label>();
+		node<Label> * vqr = new node<Label>();
+
+		allnodes+=vqr_1;	allnodes+=vqr;
+
+		std::cout<<"nodes number"<<allnodes.size()<<std::endl;
+
+		vqr_1->states_set= qr_1;
+		vqr->states_set= qr;
+
+
+/////////////////////////debug
+//std::cout<<"				add nodes";
+//std::cout<<*(vqr_1->states_set);
+//std::cout<<*(vqr->states_set);
+
+
+		//this p will not contains two pointers pointing to 2 same sets
+		bool need_add=true;
+		for(int m=0;m<p.size();m++)
+		{
+		if(*(p[m]->states_set)==*qr_1)
+			{ need_add=false;
+			break;
+			}
+		}
+		if(need_add)
+			{p+=vqr_1; }
+
+		need_add=true;
+		for(int m=0;m<p.size();m++)
+		{
+		if(*(p[m]->states_set)==*qr)
+			{ need_add=false;
+			break;
+			}
+		}
+		if(need_add)
+			{p+=vqr;}
+
+
+//////////////////////////debug
+//std::cout<<"				partitions after add:"<<std::endl;
+//for(int db=0;db<p.size();db++)
+	//std::cout<<"@"<<*(p[db]->states_set);
+
+
+
+		//line 13 add edges
+		vq_->children+=vqr_1; vq_->children+=vqr;
+
+		vqr_1->father=vq_;	vqr->father=vq_;
+
+		//line 14
+		vqr_1->gap_with_father=ki;	vqr->gap_with_father=ki;
+
+		//line 15 if loop
+		if((*qr_1).size()>(*qr).size())
+			{
+			fifo_node.push(vqr);
+			fifo_int.push(ki+1);
+			}
+		else
+			{
+			fifo_node.push(vqr_1);
+			fifo_int.push(ki+1);
+			}
+
+		}
+	}
+
+
+}
+
+// merge tree nodes
+
+
+//compute l-cover automata
+
+
+
+}

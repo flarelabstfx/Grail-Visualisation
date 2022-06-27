@@ -1,0 +1,64 @@
+//Ray 2011
+//change names according to input string
+//#include<vector>
+
+//#include <sstream>
+
+template <class Label>
+void
+fm<Label>::permutation(std::string str)
+{
+//debug
+std::cout<<std::endl<<str<<":"<<std::endl;
+
+//initial the array for renaming
+
+	//get the number of states
+	int n = number_of_states();
+	int mp[n];
+
+
+
+    std::stringstream ss(str);
+    std::string item;
+
+	int i=0;
+
+    while(std::getline(ss, item,' '))
+		mp[i++]=atoi(item.c_str());
+
+//debug
+//for (int a=0;a<n;a++)
+//	std::cout<<a<<" "<<mp[a]<<std::endl;
+
+//change
+for (int a=0;a<arcs.size();a++)
+{
+arcs[a].assign(  mp[ ( arcs[a].get_source().value() ) ],arcs[a].get_label(),mp[ ( arcs[a].get_sink().value() ) ] );
+
+
+
+}
+
+for (int a=0;a<start_states.size();a++)
+{
+start_states[a]=mp[ start_states[a].value() ];
+
+
+}
+
+for (int a=0;a<final_states.size();a++)
+{
+final_states[a]=mp[ final_states[a].value() ];
+
+
+}
+
+
+
+
+
+
+
+
+}

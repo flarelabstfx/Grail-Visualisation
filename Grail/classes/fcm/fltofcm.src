@@ -1,0 +1,642 @@
+//#This comes from 3.1.4-new
+/***************************************************************************
+
+  File:  classes/fcm/fltofcm.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following functions:
+		void fcm<Label>::fltofcm(const fl<Label>& lang)
+
+  Revision History:
+  -----------------
+	 Jason Smith							Initial version of source code
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+				 void fcm<Label>::fltofcm(const fl<Label>& lang)
+
+  Description:
+    This function incrementally builds a minimal cover automata from
+	 a finite language.  It requires n-squared space with respect to
+	 the maximum number of states during its execution.  If the input 
+	 is sorted, the maximum number of states is often much lower.
+
+	 This version of the code is modified to include word subtractions.
+	 Any word starting with - will be removed from the cover automata.
+
+  Parameters:
+    fl<Label>& - a finite language
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fcm<Label>::fltofcm(const fl<Label>& lang)
+{
+	// Temporary variables
+	int a, i, j, k, n, x, y;
+	
+	// words contains the finite language we are building an
+	// automata for and current_word is the word being added
+	// during each iteration of the main loop.
+	set<string<Label> > words;
+	string<Label> current_word;
+	lang.get_words(words);
+
+	// The attach() function is used to represent each state
+	// by an array of transitions, rather than the default
+	// representation.
+	// all_states contains our representation of the automata.
+	attach();
+
+	// These are temporary values used for construction of the
+	// automata.
+	atstate<Label> *temp_state;
+	atstate<Label> complete_state;
+	inst<Label> temp_inst;
+	
+	// This loop finds all of the symbols used in the finite
+	// language.  It is necessary to know all of these symbols
+	// beforehand.  Note that - is ignored because it is used
+	// to indicate word deletion.
+	set<Label> alpha;
+	for (i = 0; i < words.size(); i++)
+	{
+		j = 0;
+
+		// Ignore the first letter if it is -
+		if (words[i][0] == '-')
+			j++;
+			
+		while(j < words[i].size())
+		{
+			alpha += words[i][j];
+			j++;
+		}
+	}
+			
+	// start contains the index of the start state
+	int start;
+
+	// level contains an integer value for each state
+	// corresponding to its level (the minimum number of
+	// transitions that need to be taken from the start state
+	// to reach this state).
+	array<int> level;
+
+	// The following are temporary variables used in computation
+	// of the gap function and merging
+	int lev;
+	int temp;
+	int jPrime, kPrime;
+	bool tempb;
+	int min;
+
+	// deleting is true if we are deleting a word, and false 
+	// otherwise
+	bool deleting;
+
+	// l_reduced is true when l has been decreased and similarities
+	// must be considered for the entire automata.
+	bool l_reduced = true;
+
+	// When adding a new word, the old states are the ones
+	// that are cloned.
+	array<int> old;
+
+	// These variables are used to perform the breadth first
+	// traversal which finds the level of each state.
+	array<int> current_wave;
+	array<int> next_wave;
+	int level_count;
+
+	// newindex is used when reordering the states after some
+	// states have been merged.
+	array<int> newindex;
+
+	// merged contains a boolean value for each state 
+	// corresponding to whether or not it is has beeen merged.
+	array<bool> merged;
+	
+	// The gap structure is used during minimization.  It
+	// represents the minimum length of a word necessary to
+	// show that two states are not equivalent.
+	array<array<short> * > gap;
+	array<short> *gap_temp;
+	int currentgap;
+
+	if (words.size() == 0)
+		return;
+
+	// First, find the longest word
+	// Ignore word subtractions
+	int max = 0;
+	for (i = 1; i < words.size(); i++)
+		if ((words[i].size() > words[max].size()) && (words[i][0] != '-'))
+			max = i;
+
+	maxlen = words[max].size();
+
+	// Initialize the sizes array.  It contains the number of words
+	// of each possible length accepted by the automata.  We keep track
+	// of this to know when to decrease the maximum length if a word
+	// is deleted.
+
+	array<int> sizes;
+	for (i = 0; i <= maxlen; i++)
+		sizes += 0;
+
+	// Initialize the old array.
+	// There can only be as many cloned states as there are letters
+	// in a new word + 1
+	for (i = 0; i <= maxlen; i++)
+		old += -1;
+	
+	// complete_state is an array of transitions which only
+	// point to its own state.  It is used when adding the
+	// first state.
+	for (i = 0; i < alpha.size(); i++)
+	{
+		temp_inst.assign(0, alpha[i], 0);
+		complete_state += temp_inst;
+	}
+
+	// Create a start state with transitions leading to itself.
+	// This is used as a starting point for the algorithm.
+	start = 0;
+	fm<Label>::start_states += 0;
+	all_states += new atstate<Label>();
+	(*all_states[all_states.size()-1]) = complete_state;
+	gap += new array<short>;
+	level += 0;
+
+	// wc is the location of the current word being added
+	int wc = 0;
+	while(wc < words.size())
+	// This is the main loop in which all of the words are added.
+	{
+		current_word = words[wc];
+
+
+		// Check to see if we are adding or deleting a word.  Since
+		// the algorithm is similar, we use the same code for both.
+		// We also need to check if we are adding a word that is
+		// already present or deleting a word that doesn't exist.
+		
+		// 0 is the correct start state at this point in the algorithm.
+		fm<Label>::start_states[0] = 0;
+		if ((current_word.size() > 0) && (current_word[0] == '-'))
+		// We are deleting word
+		{
+			deleting = true;
+			current_word.remove(0); // remove the -
+
+			// If the word is not a member of the language,
+			// move to the next word.
+			if (member_of_language(current_word, 0) == 0)
+			{
+				wc++;
+				continue;
+			}
+		}
+		else // We are adding a word
+		{
+			deleting = false;
+
+			// If the word is already a member of the language,
+			// move to the next word.
+			if (member_of_language(current_word, 0) != 0)
+			{
+				wc++;
+				continue;
+			}
+		}
+
+
+		/****************************************************/
+		// This section of code modifies the automata to accept
+		// the new word.
+
+		int current, prev;
+		current = all_states.size();
+		prev = start; // first state to be cloned
+		start = current; // the new start state (0, 0)
+		fm<Label>::start_states[0] = start;
+		n = all_states.size(); // 0 .. n-1 are the original states
+
+		// Initialize the old array
+		for(i = 0; i < old.size(); i++)
+			old[i] = -1;
+
+		// Start by adding clone/queue states
+		for(i = 0; i < current_word.size(); i++)
+		{
+			old[i] = prev;
+			all_states += new atstate<Label>();
+			(*all_states[all_states.size()-1]) = (*all_states[prev]);
+
+			// fix the transitions in the cloned state
+
+			for (j = 0; j < (*all_states[current]).size(); j++)
+				(*all_states[current])[j].assign(current, (*all_states[current])[j].get_label(),
+					(*all_states[current])[j].get_sink());
+
+			level += i;
+			gap_temp = new array<short>((*gap[gap.size()-1]));
+			(*gap_temp) += 0;
+			gap += gap_temp;
+
+			// Add (or modify) the transition to the next state
+
+			prev = -1;
+			for (j = 0; j < (*all_states[current]).size(); j++)
+				if ((*all_states[current])[j].get_label() == current_word[i])
+				{
+					prev = (*all_states[current])[j].get_sink().value();
+					(*all_states[current])[j].assign(current, current_word[i],
+						current + 1);
+				}
+			current++;
+			
+		} // End clone/queue loop
+
+		// Add the final state accepting the new word (or rejecting it,
+		// if we are deleting a word).
+		all_states += new atstate<Label>();
+		(*all_states[all_states.size()-1]) = (*all_states[prev]);
+		if (deleting == false)
+			(*all_states[all_states.size()-1]).set_final(true);
+		else
+			(*all_states[all_states.size()-1]).set_final(false);
+		level += i;
+		old[i] = prev;
+		gap_temp = new array<short>((*gap[gap.size()-1]));
+		(*gap_temp) += 0;
+		gap += gap_temp;
+
+		// fix the transitions in the cloned state
+		for (j = 0; j < (*all_states[current]).size(); j++)
+			(*all_states[current])[j].assign(current, (*all_states[current])[j].get_label(),
+				(*all_states[current])[j].get_sink());
+			
+		/****************************************************/
+
+		
+
+		// Find the levels of all states and remove unreachable states
+		level = find_levels();
+		
+		// Initialize the merged and newindex arrays
+		for (j = 0; j < merged.size(); j++)
+			merged[j] = false;
+		while (merged.size() < all_states.size())
+			merged += false;
+		for (j = 0; j < newindex.size(); j++)
+			newindex[j] = j;
+		while (newindex.size() < all_states.size())
+			newindex += newindex.size();
+
+
+
+		/****************************************************/
+		// The following section of code performs the minimization
+		// of the automata.  It follows closely to the psuedocode.
+		
+		// Merge old states with intact states
+		for (j = 0; j < n; j++)
+			for (k = 0; k <= current_word.size(); k++)
+				if ( (level[j] != -1) && (level[old[k]] != -1) && (old[k] != j) 
+					&& (merged[j] == false) && (merged[old[k]] == false) 				
+					&& ((*all_states[old[k]]).final() == (*all_states[j]).final()) )
+				{
+					lev = (level[old[k]] > level[j] ? level[old[k]] : level[j]);
+					if (old[k] > j)
+					{
+						if ((*gap[old[k]])[j] + lev > maxlen)
+						{
+							if (level[old[k]] > level[j])
+							{
+								newindex[old[k]] = j;
+								merged[old[k]] = true;
+							}
+							else
+							{
+								newindex[j] = old[k];
+								merged[j] = true;
+							}
+						}
+					}
+					else
+						if ((*gap[j])[old[k]] + lev > maxlen)
+						{
+							if (level[old[k]] > level[j])
+							{
+								newindex[old[k]] = j;
+								merged[old[k]] = true;
+							}
+							else
+							{
+								newindex[j] = old[k];
+								merged[j] = true;
+							}
+						}
+				}
+				
+				
+		for (j = all_states.size() - 1; j > n-1; j--)
+		{
+			for (k = 0; k < j; k++) // Begin computing gap for new states
+			{
+				if ((*all_states[j]).final() != (*all_states[k]).final())
+					(*gap[j])[k] = 0; 
+				else
+				{
+					min = maxlen;
+					for (a = 0; a < alpha.size(); a++)
+					{
+						jPrime = -1;
+						kPrime = -1;
+						for (x = 0; x < (*all_states[k]).size(); x++)
+							if ((*all_states[k])[x].get_label() == alpha[a])
+								kPrime = (*all_states[k])[x].get_sink().value();
+						for (x = 0; x < (*all_states[j]).size(); x++)
+							if ((*all_states[j])[x].get_label() == alpha[a])
+								jPrime = (*all_states[j])[x].get_sink().value();
+
+						if (jPrime != kPrime)
+						{
+							if (jPrime > kPrime)
+								currentgap = (*gap[jPrime])[kPrime];
+							else
+								currentgap = (*gap[kPrime])[jPrime];
+
+							if (min > currentgap)
+								min = currentgap;
+						}
+								
+					}
+
+					(*gap[j])[k] = min + 1;
+				}
+			} // End computing gap for new states
+
+		}  // End computing gap
+				
+				
+		// Now we must update the sizes array, and recompute similarities
+		// if l changes.
+		if (deleting)
+		{
+			sizes[current_word.size()]--;
+
+			// If we have deleted the last word of length l, then the automata
+			// must be adjusted.  It's possible that l must decrease by more than
+			// one, so a loop checks for the new longest length
+			if (sizes[maxlen] == 0)
+			{
+				i = 1;
+				while ((i <= maxlen) && (sizes[maxlen-i] == 0))
+					i++;
+
+				// l_reduced must be set to true so that the similarities will
+				// be computed on the entire automata.
+				l_reduced = true;
+				maxlen = maxlen-i;
+			}
+
+		}
+		else // If we have added a word
+		{
+			sizes[current_word.size()]++;
+		}
+
+
+		// Merge states
+		
+		int lower_limit; // Contains the index of the lowest state
+							  // that we can merge.
+							  
+		// If l_reduced is not true, we only need to merge new states
+		// Otherwise, we must consider all states.
+		if (l_reduced == false)
+			lower_limit = n+1;
+		else
+			lower_limit = 0;
+			
+		for (j = all_states.size() - 1; j >= lower_limit; j--)
+			for (k = j - 1; k >= 0; k--)
+				if ((level[k] != -1) && (level[j] != -1))
+				{
+					lev = (level[k] > level[j] ? level[k] : level[j]);
+					if (((*gap[j])[k] + lev > maxlen) && (merged[j] == false) && 
+						(merged[k] == false))
+					{
+						// Always merge a higher level state into a lower level state.
+						// Also, we must check to see if a state has already been merged.
+						if (level[k] > level[j])
+						{
+							newindex[k] = j;
+							merged[k] = true;
+						}
+						else
+						{
+							newindex[j] = k;
+							merged[j] = true;
+						}
+					}
+				}
+
+		l_reduced = false; // If l was reduced, the changes have been made
+								 // and l_reduced can be set back to false.
+				
+		/****************************************************/
+		
+		
+		
+		// This loop redirects any transitions to states that have been
+		// merged.  If a state has been merged, newindex will point to
+		// the state it has been merged to.
+		for (j = 0; j < all_states.size(); j++)
+		{
+			for (k = (*all_states[j]).size() - 1; k >= 0; k--)
+			{
+				x = newindex[(*all_states[j])[k].get_sink().value()];
+				while (x != newindex[x])
+					x = newindex[x];
+				(*all_states[j])[k].assign(j, (*all_states[j])[k].get_label(), x);
+			}
+
+		}
+
+
+		
+		/****************************************************/
+		// This section of code removes the states that have been
+		// merged to another or are unreachable.  First, the start
+		// state swapped with the state at position 0.  Then, the
+		// states that will be deleted are swapped with states
+		
+		// Swap the old and new start states
+		tempb = merged[0];
+		merged[0] = merged[n]; 
+		merged[n] = tempb;
+		temp = level[0];
+		level[0] = level[n]; 
+		level[n] = temp;
+		temp_state = all_states[0];
+		all_states[0] = all_states[n];
+		all_states[n] = temp_state;
+		start = 0;
+
+		for (k = n+1; k < gap.size(); k++) // Swap gap[k][0] with gap[k][n]
+		{
+			x = (*gap[k])[0];
+			(*gap[k])[0] = (*gap[k])[n];
+			(*gap[k])[n] = x;
+		}
+		for (k = 1; k < (*gap[n]).size(); k++) // Swap gap[n][k] with gap[k][0]
+		{
+			x = (*gap[k])[0];
+			(*gap[k])[0] = (*gap[n])[k];
+			(*gap[n])[k] = x;
+		}
+
+			
+		// After the start state and state 0 have been swapped, transitions
+		// pointing to these states will need to be modified.
+		for (j = 0; j < all_states.size(); j++)
+		{
+			for (k = (*all_states[j]).size() - 1; k >= 0; k--)
+			{
+				x = (*all_states[j])[k].get_sink().value();
+				if (x == n) 
+					x = 0;
+				else if (x == 0)
+					x = n;
+				(*all_states[j])[k].assign(j, (*all_states[j])[k].get_label(), x);
+			}
+
+		}
+
+		for (j = 0; j < newindex.size(); j++)
+			newindex[j] = j;
+			
+		// j contains the location of the last state to be kept
+		j = all_states.size() - 1;
+		// n contains the location of the first state to be deleted
+		n = 1;
+		// x contains the new size of the automata
+		x = all_states.size();
+		while(n < j)
+		{
+			// Find the first state to be deleted
+			while ((merged[n] == false) && (level[n] != -1) && (n < j))
+				n++;
+			// Find the last state to be kept and update the new
+			// size of the automata
+			while (((merged[j] == true) || (level[j] == -1)) && (j > 0))
+			{
+				x = j;
+				j--;
+			}
+			// Swap the state to be deleted with the state to be kept
+			// and delete the unneeded state.
+			if (n < j)
+			{
+				x = j;
+					
+				// Swap information about the state
+				// Note that the information for the state which will be
+				// deleted is simply lost.
+				merged[n] = merged[j]; 
+				level[n] = level[j];
+
+				// Swap the state itself
+				temp_state = all_states[j];
+				all_states[j] = all_states[n]; 
+				all_states[n] = temp_state;
+
+				newindex[j] = n; // newindex keeps track of which states
+									  // were swapped so that the transitions
+									  // pointing to swapped states may be updated.
+
+				// Update the gap function
+				for (k = 0; k < n; k++)
+					(*gap[n])[k] = (*gap[j])[k];
+				k = n+1;
+				while(k < j)
+				{
+					(*gap[k])[n] = (*gap[j])[k];
+					k++;
+				}
+
+				j--;
+				n++;
+			}
+		}
+		for (j = all_states.size() - 1; j >= x; j--)
+		{
+			// Since some states have been deleted, arrays
+			// which have information about these states need
+			// to be deleted.
+			merged.remove(j);
+			level.remove(j);
+			delete all_states[j];
+			all_states.remove(j);
+			delete gap[j];
+			gap.remove(j);
+		}
+
+		/****************************************************/
+
+
+
+		// After all of the states have been swapped, transitions
+		// pointing to the swapped states need to be modified.
+		// newindex[x] contains the location of the state swapped
+		// with x.
+
+		for (j = 0; j < all_states.size(); j++)
+		{
+			for (k = (*all_states[j]).size() - 1; k >= 0; k--)
+			{
+				x = newindex[(*all_states[j])[k].get_sink().value()];
+				while (x != newindex[x])
+					x = newindex[x];
+				(*all_states[j])[k].assign(j, (*all_states[j])[k].get_label(), x);
+			}
+
+		}
+		// newindex may now return to the same size as the automata
+		while(newindex.size() > all_states.size())
+			newindex.remove(newindex.size()-1);
+
+			
+		wc++;
+
+	} // End main loop
+
+
+	// Return the cover automata to Grail's default format
+	fm<Label>::start_states[0] = start;
+	unattach();
+
+	fm<Label>::arcs.sort();
+
+	// Free all dynamically allocated memory
+	while (gap.size() > 0)
+	{
+		delete gap[gap.size()-1];
+		gap.remove(gap.size()-1);
+	}
+
+}

@@ -1,0 +1,13 @@
+(START) |- 0
+(START) |- 3
+0 q 1
+0 x 0
+1 z 2
+2 q 4
+4 x 4
+4 z 0
+0 -| (FINAL)
+1 -| (FINAL)
+2 -| (FINAL)
+3 -| (FINAL)
+4 -| (FINAL)

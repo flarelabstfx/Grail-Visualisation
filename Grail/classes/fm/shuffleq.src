@@ -1,0 +1,321 @@
+//#This comes from Grail-3.3.5
+/***************************************************************************
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ ***************************************************************************/
+/***************************************************************************
+
+  File:  classes/fm/shuffle.src     Brodie Champion + Marcus Trenton   June 2007
+  --------
+
+  void fm<Label>::shuffle(const fm<Label>& a, const fm<Label> b)
+
+  Description:
+    This function computes the shuffle of two regular languages. 
+	We store an NFA for the shuffle in this fm.
+
+    This function can be called in the following way:
+      this_fm.shuffle(first_fm, second_fm);
+
+  Parameters:
+    const fm<Label>& a - the first fm with which to compute cross product
+    const fm<Label>& b - the second fm with which to compute cross product
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+//Helper functions for shuffle quotient
+template <class Label>
+void find_pairs(fm<Label> product, 
+				fm<Label> divisor, 
+				set<pair<state,state> > state, 
+				int startIndex, 
+				set<Label> alphabet);
+
+template <class Label>
+void find_next_state(const fm<Label> &product,
+					 const fm<Label> &divisor,
+					 fm<Label> &quotient,
+					 set<set<pair<state,state> > > &quotient_states, 
+					 int index, 
+					 set<Label> alphabet);
+
+template <class Label>
+set<pair<state,state> > new_transition(	const fm<Label> &product,
+										set<pair<state,state> > state, 
+										Label input);
+
+template <class Label>
+bool is_final_state(const fm<Label> &product, const fm<Label> &divisor, set<pair<state, state> > current_state);
+
+
+//-------------------------------------------------------
+// Shuffle Quotient
+//-------------------------------------------------------
+template <class Label>
+void fm<Label>::shuffle_quotient(fm<Label> product, fm<Label> divisor)
+{
+	// clear result and this fm
+	fm<Label> quotient;
+	quotient.clear();
+	clear();
+
+	//Stores the states for the quotient dfa. 
+	//Each state is a list of pairs.
+	set<set< pair<state,state> > > quotient_states;
+
+	// Stores the start state for the quotient dfa
+	set<pair<state,state> > quotient_start;
+
+	//temporarily holds start states...
+	set <state> temp;
+
+	//Guarantee that the product and divisor are deterministic and complete
+	product.complete();
+	divisor.complete();
+	
+	product.subset();
+	divisor.subset();
+
+	//Minimize these dfa as well.
+	product.min_by_partition();
+	divisor.min_by_partition();
+
+	//We may take the alphabet for the quotient to be the alphabet of the product
+	set<Label> alphabet;
+	product.labels(alphabet);
+
+	// Set 0 to be the start state of the quotient DFA
+	state start_state;
+	start_state.start();
+
+	inst<Label> new_inst;
+	new_inst.assign(start_state, alphabet[0], 0);
+	quotient.add_instruction(new_inst);
+
+	//Calculate the start state (list of pairs) for the quotient DFA
+	// We begin with the start state of the divisor and product DFA
+	pair<state,state> start_pair;
+	start_pair.assign(product.starts(temp)[0], divisor.starts(temp)[0]);//We don't want ints, we want STATES
+
+	quotient_start += start_pair;
+
+	//Now we calculate all other product-divisor pairs which correspond to the same state in the quotient.
+	find_pairs(product, divisor, quotient_start, 0, alphabet);
+
+	//quotientStart is now the start state for the quotient DFA,
+	//so we add it to the dfa that we're building.
+	quotient_states += quotient_start;
+
+	//Now find the rest? >_<
+	find_next_state(product, divisor, quotient, quotient_states, 0, alphabet);
+
+	*this = quotient;
+}
+
+//-------------------------------------------------------------------------
+// Finds a list of product-divisor pairs which represent the same state in
+// in the quotient DFA.  This is done by appplying a transition in both
+// the product and quotient. This implies that a transition is NOT applied
+// in the other shuffled DFA - the quotient. In other words, we stay in the
+// same state in the quotient
+//-------------------------------------------------------------------------
+template <class Label>
+void find_pairs(const fm<Label> product, 
+				const fm<Label> divisor, 
+				set<pair<state,state> > current_state, 
+				int startIndex, 
+				set<Label> alphabet) {
+
+	//Keeps track of which states we've already checked transitions from
+	int next_index = current_state.size();	
+
+	//These are used gather all of the states resulting from transitions
+	//going from the given state with the given input
+	fm<Label> productTransitions;
+	fm<Label> divisorTransitions;
+
+	//Stores the pair which is reached from the current pair
+	pair<state,state> next_pair;
+
+	//A temporary set for calling sinks() in the fm class
+	set<state> temp;
+
+	// loop from startIndex to next_index - 1
+	for (int i = startIndex; i < next_index; i++) {
+
+	    // loop times for all input symbols
+	    for (int j = 0; j < alphabet.size(); j++) {
+
+			//We calculate nextPair by making a transition from state i, using input j
+			//in both components of the current pair
+			product.select(alphabet[j], current_state[i].get_left(), SOURCE, productTransitions);
+			divisor.select(alphabet[j], current_state[i].get_right(), SOURCE, divisorTransitions);		
+
+			//Since product and divisor are deterministic and complete, there is exactly ONE
+			//transition in both of these. Therefore the nextPair should be pair consiting of
+			//the sink of each of these.
+			next_pair.assign(productTransitions.sinks(temp)[0], divisorTransitions.sinks(temp)[0]);
+
+			//Add the pair that we get by going from state i, with input j
+			current_state += next_pair;
+
+	    }
+  }
+
+ // if there is a change in the size of the vector,
+ // it means there is a new pair(s) so we should look for more pairs.
+  if (current_state.size() > next_index) {
+    find_pairs(product, divisor, current_state, next_index, alphabet);
+  }
+}
+
+//---------------------------------------------------------------------------------------
+// this method finds next states of those from the element of given index
+// in the dfa_C to the element of the current last index,
+// with all input symbols.
+// basically, this has the same structure as "find_pairs."
+//---------------------------------------------------------------------------------------
+template <class Label>
+void find_next_state( const fm<Label> &product,
+					  const fm<Label> &divisor,
+					  fm<Label> &quotient,
+					  set<set<pair<state,state> > > &quotient_states, 
+					  int index, 
+					  set<Label> alphabet){
+
+	
+	set< pair<state,state> >  next_state;
+	inst<Label> newRelation;
+
+	//Keeps track of which states we've already checked transitions from
+	int next_index = quotient_states.size();
+
+	for (int i = index; i < next_index; i++) {
+
+	    // check out if this state is a final state
+		if (is_final_state(product, divisor, quotient_states[i])) {
+
+			//Designates a new final state. Due to the strange nature of Grail needing
+			//every instruction to be a triple, a useless label must be added to this
+			//instruction. We have chosen to take the first label in the alphabet as
+			//this arbitrary label.  
+			// !!!!! IS THERE A DIFFERENCE BETWEEN 'i' AND STATE_i  :| no...?
+			// !!!!! maybe, add 2? :|  look at operations in state.h
+			inst<Label> new_inst;
+
+			//Used to make instructions which require final states
+			state final_state;
+			final_state.final();
+
+			new_inst.assign(i, alphabet[0], final_state);
+			quotient.add_instruction(new_inst);
+		}	
+
+		for (int j = 0; j < alphabet.size(); j++) {
+
+			// before finding the next state of newStates.at(i),
+			// first we have to find the following pair:
+			// [Relation_A(a, u), Relation_B(Relation_B(b, z), u)]
+			// Where A is the divisor DFA, and B is the product dfa
+
+			// That is, we only want to move forward in the product DFA
+			// and not the divisor DFA, reflecting a transition in the
+			// quotient.
+			next_state = new_transition(product, quotient_states[i], alphabet[j] );
+
+			// finally, find all states using all arbitrary symbols
+			find_pairs(product, divisor, next_state, 0, alphabet);
+
+			// first check out if this state is alreay in the newStates.
+			// stateNum indicates the index of next_state in the newStates
+			// if there already exist the same state in the newStates.
+			int index_of_state = quotient_states.member(next_state);
+
+			//Stores the instruction from state i to the new state	
+			inst<Label> new_instruction;
+
+			//If the state hasn't been reached yet 
+			if (index_of_state == -1) {
+
+				//Add the new state
+				quotient_states += next_state;
+							
+				//the new instruction goes to the last state in quotient_states,
+				new_instruction.assign(i, alphabet[j], quotient_states.size() - 1);
+			}
+			else {
+				//the new instruction goes to state 'index_of_state'
+				new_instruction.assign(i, alphabet[j], index_of_state);
+			}
+
+			quotient.add_instruction(new_instruction);
+			
+		}
+	}
+
+	// if new states are added in the current DFA
+	// then repeat this method by recurssion.
+	if (quotient_states.size() > next_index) {
+		find_next_state(product, divisor, quotient, quotient_states, next_index, alphabet);
+	}
+}
+
+//---------------------------------------------------------------------------------------
+// make a new vector consisting of a state of pairs with new transition rule
+// a transition in the quotient is represented by a transition in the product,
+// BUT NOT in the divisor.
+//---------------------------------------------------------------------------------------
+template <class Label>
+set<pair<state,state> > new_transition(const fm<Label> &product,set<pair<state,state> > current_state, Label input) {
+  
+  fm<Label> product_transitions;
+  set<pair<state,state> >  new_state;
+  pair<state,state> temp_pair;
+  Label temp_label;
+  set<state> temp_set;
+
+  for (int i = 0; i < current_state.size(); i++) {
+    temp_pair = current_state[i];
+
+	//Find the next state in the product
+	product.select(input, current_state[i].get_left(), SOURCE, product_transitions);
+
+	//Assign temp pair to be the transition in the product, and no change in divisor
+	temp_pair.assign(product_transitions.sinks(temp_set)[0], temp_pair.get_right());
+
+	//Add this pair to the new state
+	new_state += temp_pair; 
+  }
+
+  return new_state; 
+}
+
+//-----------------------------------------------------------------------------------------
+//Determine if a state is a final state. In shuffle the product has a final state if the
+//pair of divisor and quotient are both final states. So for a pair of product and divisor
+//states if the divisor is a final state but the product is not then the quotient is not
+//a final state.
+//-----------------------------------------------------------------------------------------
+template <class Label>
+bool is_final_state(const fm<Label> &product, const fm<Label> &divisor, set<pair<state, state> > current_state){
+
+  set<state> temp_state;
+
+  for (int i = 0; i < current_state.size(); i++) {
+	
+	// The function 'member' returns -1 if an element is not in the set, so this says that
+  	//the left member of the ith pair is NOT final, and the right member of the ith pair IS final
+    if ( product.finals(temp_state).member(current_state[i].get_left()) == -1  
+		&& divisor.finals(temp_state).member(current_state[i].get_right()) != -1) {
+
+      return false;
+    }
+  }
+  return true;
+}

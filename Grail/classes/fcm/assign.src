@@ -1,0 +1,17 @@
+// modified from fm =
+
+template <class Label>
+fcm<Label>&
+fcm<Label>::operator=(const fcm<Label>& f)
+{
+	// check for self-assignment
+	if (this == &f)
+		return *this;
+	
+	maxlen=f.maxlen;
+	fm<Label>::arcs = f.fm<Label>::arcs;
+	fm<Label>::start_states = f.fm<Label>::start_states;
+	fm<Label>::final_states = f.fm<Label>::final_states;
+
+	return *this;
+}

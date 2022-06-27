@@ -1,0 +1,153 @@
+//#added in 2010 summber by ray
+
+/***************************************************************************
+
+ File:  classes/fm/ntatodfa.src
+ -----
+
+ Description:
+ ------------
+ This file contains the definition of the following function:
+ void fm<Label>::ntatodfa(fm<Label>&)
+
+ This function is a public member of the template class fm (declared 
+ in classes/fm/fm.h).
+
+ Revision History:
+ -----------------
+ Ray Rui Zhou   2010 summer    initial version
+
+ ***************************************************************************/
+
+/***************************************************************************
+
+ void fm<Label>::ntatodfa(fm<Label>&)
+
+ Description:
+ This function is a public member of the template class fm (declared in
+ classes/re/fm.h). This transfers a nfa to a dfa.
+
+ This function can be called in the following way:
+ this_fm.ntatodfa();
+
+ Parameters:  none
+
+ Return Value:  none
+ 
+ ***************************************************************************/
+
+template<class Label>
+void fm<Label>::nfatodfa(fm<Label>& dfa)
+{
+	set < Label > alpha;
+	labels(alpha);
+
+	if (debug > 8)
+	{
+		std::cout << "in fm::ntatodfa(), input is " << std::endl << *this << std::endl;
+	}
+	array < set<state> > stlist;
+
+	stlist += start_states;
+
+	set_map();
+	attach();
+
+	int dealt = 0;
+	set<state> workon, nextst;
+
+	while (dealt < stlist.size())
+	{
+
+		workon.clear();
+		workon = stlist[dealt];
+		nextst.clear();
+
+		for (int a = 0; a < alpha.size(); a++)
+		{
+			for (int b = 0; b < workon.size(); b++) //for each state in the workon, get next with the label alpah[a]
+			{
+				state tmp;
+				tmp = workon[b];
+				for (int c = 0;
+						c < (*(all_states[map.member(tmp.value())])).size();
+						c++) //find the label
+				{
+					if ((*(all_states[map.member(tmp.value())]))[c].get_label()
+							== alpha[a])
+						nextst +=
+								(*(all_states[map.member(tmp.value())]))[c].get_sink();
+				}
+
+			}
+			//add arcs
+			if (stlist.member(nextst) < 0)
+				stlist += nextst;
+			inst < Label > tmpInst;
+			tmpInst.assign(dealt, alpha[a], stlist.member(nextst));
+			dfa.add_instruction(tmpInst);
+			if (debug > 8)
+			{
+				std::cout << "in fm::ntatodfa(), add arc"
+						<< tmpInst.get_source().value() << tmpInst.get_label()
+						<< tmpInst.get_sink() << std::endl;
+			}
+
+			nextst.clear();
+		}
+		dealt++;
+	}
+	unattach();
+
+	state startst(0);
+	set<state> startset, finalset;
+	startset += startst;
+
+	dfa.set_starts(startset);
+
+	for (int a = 0; a < stlist.size(); a++)
+	{
+		set < state > intersection;
+		intersection.intersect(stlist[a], final_states);
+		if (intersection.size() > 0)
+			finalset += a;
+	}
+
+	dfa.set_finals(finalset);
+
+	if (debug > 0)
+	{
+		std::cout << "in fm:nfatodfa(), sets of states:" << std::endl;
+		for (int a = 0; a < stlist.size(); a++)
+		{
+			std::cout << "set: " << a << " { ";
+			for (int b = 0; b < stlist[a].size(); b++)
+				std::cout << stlist[a][b].value() << " ";
+			std::cout << " }" << std::endl;
+		}
+	}
+	if (debug == -1)
+	{
+		std::cout << "in fm:nfatodfa(), special debug info written into file"
+				<< std::endl;
+
+		char* tempname;
+		tempname = (char*) malloc(strlen(nfatodfca_name) + 30);
+		strcpy(tempname, nfatodfca_name);
+		strcat(tempname, "_Nfatodfca_Set_Info");
+		std::ofstream myfile(tempname);
+		//myfile.open ;
+		myfile << "SETINFO_BEGIN:nd\n";
+		for (int a = 0; a < stlist.size(); a++)
+		{
+			myfile << a << " ";
+			for (int b = 0; b < stlist[a].size(); b++)
+				myfile << stlist[a][b].value() << " ";
+			myfile << std::endl;
+		}
+		myfile << "SETINFO_END\n";
+		myfile.close();
+	}
+
+}
+

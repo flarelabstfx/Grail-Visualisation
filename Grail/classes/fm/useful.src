@@ -1,0 +1,119 @@
+//#added in 2010 summer by ray
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent. 
+//	May 1993
+
+
+/***************************************************************************
+
+  File:  classes/fm/useful.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::useful_fm()
+
+    This function is a public member of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Ray Rui Zhou   2010 summer    initial version
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+                    void fm<Label>::reduce()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/re/fm.h).  Reduce the state set in this fm to states which 
+    are useful .
+
+    This function can be called in the following way:
+      this_fm.useful_fm();
+
+  Parameters:  none
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::useful_fm()
+{
+if (debug>8) {std::cout<<"in fm::useful_fm(), input is "<<std::endl<<*this<<std::endl;}
+
+set<state> vec;
+vec.array<state>::operator= (final_states) ;
+
+set_map();
+attach();
+
+int i=0;
+
+while (i<vec.size())	//?
+{
+//each state
+for (int a=0;a<all_states.size();a++)
+	{
+	//each state's transitions on different label
+	for (int b=0;b<(*all_states[a]).size();b++)
+		{
+		if ( ((*all_states[a])[b].get_sink().value()== vec[i].value())&&(vec.member(map[a])<0)  )
+			{
+				vec+=map[a];
+			}
+		}
+
+	}
+
+++i;
+
+}
+
+if (debug>8) {std::cout<<"in fm::useful_fm(), found useful states "<<vec.size()<<std::endl;}
+
+unattach();
+
+//delete useless arcs
+set<inst<Label> >	to_del;	
+for (int a=0;a<arcs.size();a++)
+	{
+
+if (vec.member(arcs[a].get_source().value())<0 || vec.member(arcs[a].get_sink().value())<0 )
+		{	
+
+		if (debug>8){std::cout<<"In fm::useful(),arc deleted: "<<arcs[a].get_source().value()<<arcs[a].get_label()<<arcs[a].get_sink().value()<<std::endl;}
+		
+
+		to_del+=arcs[a];
+
+		}
+		
+	}
+	arcs-=to_del;
+
+
+
+// what if start is useless?
+set<state >	todel;	
+for (int a=0;a<start_states.size();a++)
+ 	if(vec.member(start_states[a])<0)
+		{todel+=start_states[a];	
+if (debug>8){std::cout<<"start deleted: "<<start_states[a].value()<<std::endl;}
+		}
+
+start_states-=todel;
+
+
+
+}
+
+

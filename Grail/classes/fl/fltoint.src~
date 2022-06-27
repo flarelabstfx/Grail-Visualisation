@@ -1,0 +1,148 @@
+/* 
+reverse of inttofl
+*/
+
+
+template<class Label>
+void 
+fl<Label>::fltoint(int alpha_size) 
+{
+if(words.size()==0)
+        {  
+        std::cout<<0<<std::endl;
+        return;
+        }
+
+array<Label> letters;
+for(int a=0;a<26;a++)
+        letters+=alphabets[a];
+
+//first determine the size of alphabets
+set<Label> alphabets_here;
+get_alphabet(alphabets_here);
+
+if(alpha_size<alphabets_here.size())
+        alpha_size=alphabets_here.size();
+
+//std::cout<< alpha_size;
+//reverse to binary
+words.sort_length();
+
+string<Label> temp=words[words.size()-1]; //last word
+
+
+
+int place=0;
+int begin=0;
+
+//use the last word to decide the binary array size
+if(temp.size()==0)
+        {place =0;}
+else if(alpha_size==1) 
+        {place=temp.size();}
+else
+        {
+        //the place of the beginning of the words with last strings' lenghth 
+        begin= alpha_size * ( pow( alpha_size, temp.size()-1) -1)/(alpha_size-1)+1;
+        //the word transfer to a number in base alpha_size
+        //is the place of the word among the words of the same length
+        for(int a=0;a<temp.size();a++)
+                {
+                place=place*alpha_size+letters.member(temp[a]);
+                }
+        place+=begin;
+        }
+
+char binaries[place+1];//holds the binary form of the old string
+int binary_size=place+1;
+
+for(int a=0;a<binary_size;a++)        binaries[a]=0;
+
+binaries[place]=1;
+
+///reverse to decimal and out put
+//middle words
+for(int a=1;a<words.size()-1;a++)
+        {
+        //std::cout<<"in"<<std::endl;
+        string<Label> temp=words[a];
+
+        if(alpha_size==1) 
+                {place=temp.size();}
+        else
+                {
+
+                begin= alpha_size * ( pow( alpha_size, temp.size()-1) -1)/(alpha_size-1)+1;
+                place =0;
+
+                for(int a=0;a<temp.size();a++)
+                        {
+                        place=place*alpha_size+letters.member(temp[a]);
+                        }
+                place+=begin;
+                }
+        binaries[place]=1;
+
+        }
+
+//first word
+if(words[0].size()==0)  
+        {binaries[0]=1;}
+else
+        {
+        string<Label> temp=words[0];
+
+        if(alpha_size==1) 
+                {place=temp.size();}
+        else
+                {
+                begin= alpha_size * ( pow( alpha_size, temp.size()-1) -1)/(alpha_size-1)+1;
+                place =0;
+
+                for(int a=0;a<temp.size();a++)
+                        {
+
+                        place=place*alpha_size+letters.member(temp[a]);
+
+                        }
+                place+=begin;
+                }
+                binaries[place]=1;     
+
+        }
+
+
+int decimal_size=(int)(binary_size*log10(2))+1;
+char decimal[decimal_size];//guarentee enough space
+
+for(int a=0;a<decimal_size;a++) decimal[a]=0;
+
+
+for(int a=binary_size-1;a>=0;a--)
+        {
+
+        for(int b=0;b<decimal_size;b++) decimal[b]*=2;
+
+        decimal[0]+=binaries[a];
+
+        for(int b=0;b<decimal_size;b++)
+                {
+                if(decimal[b]>=10)
+                         {
+                         decimal[b+1]+=1;
+                         decimal[b]-=10;
+
+                         }
+
+                }
+
+
+        }
+
+//std::cout<<std::endl;
+for(int a=decimal_size-1;a>=0;a--) 
+        std::cout<<(int)decimal[a];
+
+std::cout<<std::endl;
+
+}

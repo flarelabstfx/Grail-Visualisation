@@ -1,0 +1,108 @@
+//#This comes from 3.1.4-new
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent. 
+//	December 1993
+
+/***************************************************************************
+
+  File:  classes/fcm/member.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      int fcm<Label>::member_of_language(const string<Label>& wd, 
+                                        const int verbose)
+
+    This function is a public member of the template class fcm (declared 
+    in classes/fcm/fcm.h).
+
+  Revision History:
+  -----------------
+    The Grail Project               Initial version of source code
+    M.Hoeberechts  98/09/07         Added header and comments
+	 Jason Smith							Modified from classes/fm/member.src
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+       int fcm<Label>::member_of_language(const string<Label>& wd, 
+                                         const int verbose)
+
+  Description:
+    This function is a public member of the template class fcm (declared 
+    in classes/fcm/fcm.h).  This function determines whether this fm accepts
+    the parameter word (i.e. reaches a final state when the letters of the
+    word are used as input).  If the parameter 'verbose' is true than the
+    function prints out messages on the standard output stream to track 
+    the transitions used in the finite state machine as the word is 
+    inputted.  The function returns 1 if the word is accepted and 0 
+    otherwise.  This fm and the parameters are unchanged during execution.
+
+	 The only difference between this version of member_of_language and class
+	 fm's is that the length of the word is checked before the word is 
+	 executed.  If the word is longer than maxlen, it is automatically not 
+	 accepted.
+
+    This function can be called in the following way:
+      result = this_fcm.member_of_language(test_word, 0);
+
+  Parameters:
+    const string<Lable>& wd - the string to be tested
+    const int verbose - true to activate verbose mode, false otherwise
+
+  Return Value:
+    int - 1 if the word is accepted, 0 otherwise.
+  
+ ***************************************************************************/
+
+template <class Label>
+int
+fcm<Label>::member_of_language(const string<Label>& wd, const int verbose)
+{
+	if (wd.size() > maxlen)
+		return 0;
+
+	int i;
+
+	attach();
+
+	// We always assume DFCA are deterministic, so there can be only one 
+	// start state.
+	int current_state = fm<Label>::start_states[0].value(); 
+	int next_state;
+
+	int current_letter = 0;
+
+	while(current_letter < wd.size())
+	{
+		next_state = -1;
+
+		// If a state has no transitions, it may not occupy a space
+		// in all_states.
+		if (current_state >= all_states.size())
+			return 0;
+		
+		for (i = 0; i < (*all_states[current_state]).size(); i++)
+			if ((*all_states[current_state])[i].get_label() == wd[current_letter])
+				next_state = (*all_states[current_state])[i].get_sink().value();
+
+		if (next_state == -1) // No transition was defined for that letter
+			return 0;
+		else
+			current_state = next_state;
+
+		current_letter++;
+	}
+
+	// Only return 1 if we end in a final state
+	if ((*all_states[current_state]).final() == true)
+		return 1;
+	else
+		return 0;
+	
+}

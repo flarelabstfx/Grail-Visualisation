@@ -1,0 +1,33 @@
+#!/bin/sh
+#By Ray & Sherry 2010 summer
+
+
+# Absolute path to this script. 
+SCRIPT=$(readlink -f $0)
+# Absolute path this script is in.
+SCRIPTPATH=`dirname $SCRIPT`	
+
+BIN=$SCRIPTPATH/../../bin
+MACHINES=$SCRIPTPATH/../machines
+ERRORS=$SCRIPTPATH/../errors
+
+for i in d1 d3 n1 n2
+do	
+	for o in "a" "ab" "ac" "acd" 
+	do	
+		echo -n "Testing	$1	on	$i	and 	$o..."
+		$BIN/$1 ${MACHINES}/$i $o | sort >$$.tmp 2>/dev/null
+		sort $SCRIPTPATH/../$1/$o.$i >out
+		if diff $$.tmp out
+		then
+			rm $$.tmp
+			echo "results match !"
+			echo "Testing $1 on $i and $o passed !"|cat >> passed
+		else
+			mv $$.tmp ${ERRORS}/$1.$o.$i
+			echo "fail to match, results recorded !"
+			echo "Testing $1 on $i and $o failed !"|cat >> failed
+		fi
+		rm out
+	done
+done

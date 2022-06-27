@@ -1,0 +1,230 @@
+/***************************************************************************
+Added by Ray summer 2011
+
+  File:  classes/fl/inttofl.src    
+  --------
+
+  void		fl<Label>::inttofl(int alphabet_size, char *  num, int num_length) 
+
+  Description:
+    This function computes  the  mapping between number and finite language
+    given a alphabets size. 
+
+  Parameters:
+        int alphabet_size 
+        char []  num  : store any big numbers
+        mum_length : the length of the char array
+  
+ ***************************************************************************/
+
+
+//help method 1: to base n
+//note  this only supports up to base 10
+//because the digits are stored in long
+long
+tobase(long num, int base)
+{
+long n=num;
+if(n<base)
+	return n;
+else 
+	return ( tobase(n/base,base )*10+n%base  ); 
+}
+
+//help 2
+/*
+this method used to compute the  length of 
+"No.'number'" word in certain series with alphabet size 'base'
+and lexicographical  order
+
+example:
+find_length(5, 2) :
+
+paramenter 2 means alphbets{a,b}
+so series will be : 
+a b aa ab ba bb aaa .... 
+No.5 word legth is  2(returned)
+
+*/
+int find_length(int  number, int base)
+{
+if(base==1)
+        return number;
+
+
+int temp=1;
+while (base*(pow(base,temp)-1)/(base-1) <number)
+        temp++;
+
+return temp;
+}
+
+
+
+//help 3
+//help method, complete digits to certain length
+//comp-digits(123, int [] digits, 5)
+//retuens 00123
+
+int * comp_digits(long num,  int * digits ,int digit_num)
+{
+
+for(int a=0;a<digit_num;a++)
+{
+ digits[a]=(int)(num/pow(10,digit_num-a-1));
+num-=(long)(digits[a]*pow(10,digit_num-a-1));
+}
+return digits;
+} 
+
+//but now only support to k 
+//for chars 
+char alphabets[26]={'a','b','c','d','e','f','g','h','i','j','k','l','m',
+'n','o','p','q','r','s','t','u','v','w','x','y','z'};
+
+
+// 'main' method 
+template<class Label>
+void 
+fl<Label>::inttofl(int alphabet_size,char * num, int num_length) 
+{
+array<int> numbers;//stores the places of the '1's in binray form of the huge number
+                        //stored in num (char array)
+bool has_epsilon=false;// whether this language has epsilon
+
+
+if (debug)
+        {
+        std::cout<<"get";
+        for(int a=0;a<num_length;a++)
+                std::cout<<(int)(num[a]);
+
+        std::cout<<std::endl;
+        }
+
+
+//if there is epsilon
+for(int a=0;a<num_length-1;a++)
+{
+        if( ((int)num[a])/2*2 != ((int)num[a])) 
+        {
+
+        num[a+1]=int(num[a+1])+10;
+
+        }
+
+        num[a]=((int)num[a])/2;
+
+}
+
+if((int)(num[num_length-1])/2*2!=int(num[num_length-1]))
+                                 has_epsilon=true;
+
+num[num_length-1]=(int)(num[num_length-1])/2;
+
+
+if (debug)
+        {
+        std::cout<<"after first division by 2"<<std::endl;
+        for(int a=0;a<num_length;a++)
+                std::cout<<(int)(num[a]);
+
+        std::cout<<std::endl;
+        std::cout<<"the code is";
+        }
+
+
+//now get the digits
+bool done=false;
+int digit_count=1;
+while(!done)
+{
+
+
+done=true;
+
+
+for(int a=0;a<num_length-1;a++)
+        {
+        if( ((int)num[a])/2*2 != ((int)num[a])) 
+                {
+
+                num[a+1]=int(num[a+1])+10;
+
+                }
+
+         num[a]=((int)num[a])/2;
+
+         if(num[a]>0)    done=false;
+
+       }
+
+int temp=(int)(num[num_length-1])- (int)(num[num_length-1])/2*2 ;
+
+if(temp==1)
+        numbers+=digit_count;
+
+if(debug)
+        std::cout<<temp;
+
+num[num_length-1]=(int)(num[num_length-1])/2;
+
+if(num[num_length-1]>0)    done=false;
+
+digit_count++;
+}
+
+if(debug)
+{
+std::cout<<std::endl;
+
+for(int a=0;a<numbers.size();a++)
+        std::cout<<numbers[a]<<",";
+
+
+
+std::cout<<std::endl;
+}
+
+
+
+
+if(has_epsilon)
+        std::cout<<std::endl;
+ 
+
+//now directly output the lnaguge letter by letter
+for(int a=0;a<numbers.size();a++)
+{
+if(debug)       std::cout<<"No."<<numbers[a]<<std::endl;
+
+int length= find_length(numbers[a], alphabet_size);
+
+
+int place;// the place in all the words of certain length
+
+if(alphabet_size==1) 
+        place=1;
+else       
+        place=numbers[a]-(alphabet_size*(pow(alphabet_size,length-1) -1)/(alphabet_size-1)   );
+
+
+//std::cout<<"It will be length"<<length<<" place "<<place<<std::endl;
+
+int num_digit=tobase(place-1, alphabet_size);
+int * digits=new int[length];
+comp_digits(num_digit,digits,length);
+
+//std::cout<<"It is ";
+//debug
+//for(int b=0;b<length;b++)
+       //std::cout<<digits[b]; 
+
+for(int b=0;b<length;b++)
+       std::cout<<alphabets[digits[b]]; 
+
+std::cout<<std::endl;
+
+}
+
+}

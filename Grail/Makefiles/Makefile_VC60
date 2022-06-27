@@ -1,0 +1,72 @@
+#SYS: This is for VC60 system
+#SYS=VC60
+
+
+VC60CC=cl
+
+
+VC60FL = -o grail.exe /O2 /G7
+
+
+all:
+#
+#	You may have to remove this line on stupid SGI machines
+#	that barf if they rm nothing
+#
+	@$(MAKE) clean_$(SYS) "MAKE=$(MAKE)"
+#
+#	uncomment re lines if you want those alphabets
+#	compiled and installed
+#
+	@$(MAKE) compile_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlyint "MAKE=$(MAKE)"
+
+	@$(MAKE) install_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install_$(SYS) TYPE=re
+#	@$(MAKE) install_$(SYS) TYPE=mlychar
+#	@$(MAKE) install_$(SYS) TYPE=mlyint
+	@echo "Everything made"
+
+
+
+compile_VC60:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(VC60CC) "CCFLAGS=$(VC60FL)" BIN=..\binaries\486\ 
+
+	@cd ..
+
+
+install_VC60:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+#	@cp char/GrailVersion.txt ${BIN}
+	@cd ..
+	
+
+checkout:
+	@cd tests
+	@check_dos
+	@cd ..
+	@echo Testing complete.
+
+
+clean:
+	@cd char
+	@$(MAKE) clean_DOS
+	@cd ..\re
+	@$(MAKE) clean_DOS 
+	@cd ..\mlychar
+	@$(MAKE) clean_DOS
+	@cd ..\mlyint 
+	@$(MAKE) clean_DOS
+	@cd ..
+	@del /F /Q bin\* mon.out core tests\errors\*
+	@echo Everything clean.
+	
+
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

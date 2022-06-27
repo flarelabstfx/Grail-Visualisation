@@ -1,0 +1,62 @@
+//#This is new code 3.4.3
+//	This code is LGPL.
+//	 
+//	April 2014 
+
+
+/***************************************************************************
+
+  File:  classes/fm/suffix.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::suffix()
+
+    This function is a public member of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Cezar Campeanu           Initial version of source code
+    
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+               void fm<Label>::suffix()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/re/fm.h).  This function computes the suffix of the fm.  
+    As a result, each word in the language represented by the fm will be 
+    a suffix of  a word.  Suffix is
+    accomplished by adding all states as initial states.
+    
+
+    This function can be called in the following way:
+      this_fm.suffix();
+
+  Parameters:  none
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::suffix()
+{
+        
+	//attach();
+        set<state> newstart;
+        newstart=this->states(newstart);
+	set_starts(newstart);
+	
+	
+	
+}

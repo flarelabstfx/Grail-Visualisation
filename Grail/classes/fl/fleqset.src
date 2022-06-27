@@ -1,0 +1,361 @@
+/***************************************************************************
+Added by Ray summer 2011
+
+// this is modified from Ray's flsimsets program
+// thus not very efficeint in tha algorithm side..
+// works well though
+
+  File:  classes/fl/fleqset.src    
+  --------
+
+  void		fl<Label>::fleqset() const
+
+  Description:
+    This function computes the equivalence of the words
+  Parameters:
+    void
+  
+ ***************************************************************************/
+
+template<class Label>
+string<Label> get_rid_pre(string<Label> word,string<Label> pre) ;
+
+
+
+
+template<class Label>
+void fl<Label>::fleqset() const
+{
+
+array<array<string<Label> > > eqsets;
+for (int a=0;a<words.size();a++)
+  {
+        array<string<Label> > temp;
+        temp+=words[a];
+        eqsets+=temp;
+
+  }
+
+
+
+for (int i=0;i<words.size();i++)
+{
+for (int j=i+1;j<words.size();j++)
+{
+if(is_equivalent(words[i],words[j]))
+{
+eqsets[i]+=words[j];
+eqsets[j]+=words[i];
+}
+}
+}
+
+//sort
+for(int a=0;a<eqsets.size();a++)
+        eqsets[a].sort_length();
+
+
+
+
+
+//out put 
+
+//count eqsets without duplicated
+int count=eqsets.size();
+
+std::cout<<std::endl<<"Step 1: Sets of equivalent words for each word in L:"<<std::endl
+<<"(The words in each set are equivalent with each other)"
+<<std::endl<<std::endl;
+
+int seq=1;
+
+for (int a=0;a<words.size();a++)
+{
+bool same =false;
+
+
+for(int aa=0;aa<a;aa++)
+{
+
+if(eqsets[aa]==eqsets[a])
+        {
+       // std::cout<<a+1<<" . word ["<< words[a]<<"] : "<<"same as "<<aa+1<<std::endl;
+        count--; same =true;
+        break;
+        }
+
+
+}
+
+
+
+if(same)
+        continue;
+
+
+
+std::cout<<seq++<<" : ";
+
+std::cout<<"{"<<eqsets[a][0];
+for(int b=1;b<eqsets[a].size();b++)
+{
+std::cout<<", "<<eqsets[a][b];
+}
+std::cout<<"}"<<std::endl;
+
+}
+
+//std::cout<<std::endl<<"Distinguishable sets count: "<<count<<std::endl;
+
+
+
+//not end yet now we need to think of the words that is shorter than l but not 
+//in language L and the words longer than l
+
+//1.get alphabets
+set<Label> alphabets;
+get_alphabet(alphabets);
+
+
+//2.get the longest word length
+int max_length=0;
+for(int i=0;i<words.size();i++)
+{
+if(words[i].size()>max_length)
+{
+max_length=words[i].size();
+}
+}
+
+//3.intial and add the empty string
+set<string<Label> > all_words;
+
+string<Label> emptystring;
+emptystring.clear();
+all_words+=emptystring;
+int start_point=0;
+int end_point=0;
+// looping until we add all the words of this alphabet with lenght<=l
+for(int i=0;i<max_length;i++)
+{
+start_point=end_point;
+end_point=all_words.size();
+for (int j=start_point;j<end_point;j++)
+        {
+        //for each word we already have  
+        for(int k=0;k<alphabets.size();k++)
+                {
+                string<Label> temp(all_words[j]);
+                temp+=alphabets[k];
+                all_words+=temp;
+                
+                }
+        }
+}
+//debug
+if(debug>0)
+{
+std::cout<<std::endl<<"all words: {"<<all_words[0];
+for (int a=1;a<all_words.size();a++)
+{
+std::cout<<","<<all_words[a];
+}
+std::cout<<"}"<<std::endl;
+}
+
+//now we focus on those not in the language
+set<string<Label> > complements;
+complements=all_words;//just a shadow copy
+complements-=words;
+
+
+
+
+//now add a string longer than l, this string represents all the strings longer
+//than l
+string<Label> longest;
+longest.clear();
+for(int i=0;i<=max_length;i++)
+{
+longest+=alphabets[0];
+}
+complements+=longest;
+
+complements.sort_length();
+
+
+//debug
+//if(debug>0)
+{
+std::cout<<std::endl<<"complements of L: {"<<complements[0];
+for (int a=1;a<complements.size();a++)
+{
+std::cout<<","<<complements[a];
+}
+std::cout<<"}"<<std::endl<<"the word ["<<longest<<"] represents all words longer than l"<<std::endl;
+}
+
+//Now working on the complements words and get the same result
+
+array<array<string<Label> > > eqsets_c;
+for (int a=0;a<complements.size();a++)
+  {
+        array<string<Label> > temp;
+        temp+=complements[a];
+        eqsets_c+=temp;
+
+  }
+
+
+
+for (int i=0;i<complements.size();i++)
+{
+for (int j=i+1;j<complements.size();j++)
+{
+if(is_equivalent(complements[i],complements[j]))
+{
+eqsets_c[i]+=complements[j];
+eqsets_c[j]+=complements[i];
+}
+}
+}
+
+//sort
+for(int a=0;a<eqsets_c.size();a++)
+        eqsets_c[a].sort_length();
+
+
+
+
+
+//out put 
+
+//count eqsets without duplicated
+int count_c=eqsets_c.size();
+
+std::cout<<std::endl<<"Step 2: Sets of equivalent words for each word not in L:"<<std::endl
+
+<<"(The words in each set are equivalent with each other)"
+<<std::endl<<std::endl;
+
+for (int a=0;a<complements.size();a++)
+{
+bool same =false;
+
+
+for(int aa=0;aa<a;aa++)
+{
+
+if(eqsets_c[aa]==eqsets_c[a])
+        {
+        //std::cout<<a+1<<" . word ["<< complements[a]<<"] : "<<"same as "<<aa+1<<std::endl;
+        count_c--; same =true;
+        break;
+        }
+
+
+}
+
+
+
+if(same)
+        continue;
+
+
+
+std::cout<<seq++<<"  : ";
+
+std::cout<<"{"<<eqsets_c[a][0];
+for(int b=1;b<eqsets_c[a].size();b++)
+{
+std::cout<<", "<<eqsets_c[a][b];
+}
+std::cout<<"}"<<std::endl;
+
+}
+
+std::cout<<std::endl<<"Distinguishable sets count: "<<count<<"+"<<count_c<<"="<<count+count_c<<std::endl;
+
+
+
+
+
+}
+
+
+
+
+template<class Label>
+bool  fl<Label>:: is_equivalent(string<Label>& a,string<Label>& b) const
+{
+
+
+//bool toreturn=false;
+
+//shorter and longer
+string<Label> shorter;
+string<Label> longer;
+if(a.size()<=b.size())
+{
+shorter=string<Label>(a);longer=string<Label>(b);
+}
+else
+{
+shorter=string<Label>(b);longer=string<Label>(a);
+}
+
+if(debug>0)
+        std::cout<<std::endl<<"working onw pair"<<shorter<<","<<longer<<std::endl;
+
+
+for (int i=0;i<words.size();i++)
+{
+
+//this word shorter than both
+if(shorter.size()>=words[i].size())
+        continue;
+
+//if the shorter one is the prefix of this word
+string<Label> temp;
+
+temp = get_rid_pre(words[i],shorter);
+
+if(!temp.is_null())
+{
+string<Label> back(longer);
+
+longer+=temp;
+if(words.member(longer)<0)
+        return false;
+//else if(words.member(longer)>=0)
+ //       toreturn =true;
+
+longer=string<Label>(back);
+}
+
+temp.clear();
+//if the longer one is prefix of this word
+temp = get_rid_pre(words[i],longer);
+if(!temp.is_null())
+{
+string<Label> back(shorter);
+shorter+=temp;
+if(words.member(shorter)<0)
+        return false;
+//else if(words.member(shorter)>=0)
+ //       toreturn =true;
+shorter=string<Label>(back);
+}
+
+
+}
+
+return true;
+
+}
+
+
+
+
+
+

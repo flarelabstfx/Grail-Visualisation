@@ -1,0 +1,13 @@
+//#This comes from 3.1.4-new
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent.
+//	July 1995
+
+template <class Input,class Iput, class Output>
+std::ostream& 
+operator<<(std::ostream& os, const tuple<Input, Iput, Output>& p)
+{
+	return os << "[" << p.get_left() << "," << p.get_mid() << "," <<
+        p.get_right() <<
+                "]";
+};

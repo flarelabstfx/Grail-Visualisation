@@ -1,0 +1,126 @@
+//#ray 2010 summer
+/***************************************************************************
+
+  File:  classes/fcm/fcmtofm0.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      fm<Label> fcm<Label>::fcmtofm0(fm<Label> &f)
+
+    This function is a public member of the template class fcm (declared 
+    in classes/fcm/fcm.h).
+
+  Revision History:
+  -----------------
+  RuiZhou 2010 summer				Initial verson of source code
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+      		fm<Label> fcm<Label>::fcmtofm0(fm<Label> &f)
+
+  Description:
+    This function converts a cover automata (fcm) into a minimal fm.  It
+	 uses fm<Label>::min_by_partition for the minimization. 
+    
+This function can be called in the following way:
+      this_fcm.fcmtofm0(new_fm);
+
+  Parameters:
+    fm<Label> &fmD - stores the newly created fm
+
+  Return Value:
+    fm<Label> - a reference to the new fm
+  
+ ***************************************************************************/
+
+template<class Label>
+fm<Label>& 
+fcm<Label>::fcmtofm0(fm<Label>& fmC)
+{
+
+if(debug>8){std::cout<<"input fcm in fcmtofm0() method is "<<*this<<std::endl;}
+
+	fm<Label> fmA;
+	fmA.clear_all();
+	fmA.set_arcs(fm<Label>::arcs);
+	fmA.set_finals(fm<Label>::final_states);
+	fmA.set_starts(fm<Label>::start_states);
+	
+	set<Label> alpha;
+	alpha.clear();
+	fmA.labels(alpha);
+
+if(debug>0){std::cout<<"fmA in fcmtofm0() method is "<<fmA<<std::endl;}
+	
+// construct the DFA B
+	int l=maxlen;	
+
+if(debug>8){std::cout<<"maxlen"<<l<<std::endl;}
+
+	fm<Label> fmB;
+	fmB.clear();
+
+	inst<Label> tmpInst;
+	//add instructions to B
+	for (int a=0;a<l+1;a++)
+	{	
+		state tmpSource(a); 
+		state tmpSink(a+1);
+
+		//if(a==0){tmpSource.start();}
+		//tmpSource.final();				
+		//tmpSink.final();
+								
+		for (int b=0;b<alpha.size();b++)
+		{							
+		//inst<Label> tmpInst;
+		tmpInst.assign(a,alpha[b], a+1); if(debug>8){std::cout<<"add inst"<<tmpInst<<std::endl;}
+		fmB.add_instruction(tmpInst);
+		}
+	}
+	
+	//handle start and final
+	set<state> statesB;
+	
+	fmB.states(statesB);
+
+	//statesB.sort();
+	statesB-=statesB[statesB.size()-1];
+
+	fmB.set_finals(statesB);
+	statesB.clear();
+	state tmpstate(0);
+	statesB+=tmpstate;
+	fmB.set_starts(statesB);
+	
+	//sink
+	for (int b=0;b<alpha.size();b++)
+	{
+		state tmpSource(l+1); 
+		state tmpSink(l+1);
+		//inst<Label> tmpInst;
+		tmpInst.assign(tmpSource,alpha[b], tmpSink);	////std::cout<<"add inst"<<tmpInst<<std::endl;
+		fmB.add_instruction(tmpInst);
+	}
+
+if(debug>0){std::cout<<"fmB in fcmtofm0() method is "<<fmB<<std::endl;}	
+
+fmC.cross_product(fmA,fmB);
+fmA.clear_all();
+fmB.clear_all();
+
+if(debug>0){std::cout<<"fmC in fcmtofm0() method is "<<fmC<<std::endl;}
+fmC.min_by_partition();
+if(debug>0){std::cout<<"fmC in fcmtofm0() method is minimized"<<std::endl;}
+
+return fmC;
+	
+
+}

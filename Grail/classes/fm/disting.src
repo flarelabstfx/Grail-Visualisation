@@ -1,0 +1,125 @@
+// New in 3.4.3
+//	This code is LGPL.
+//	. 
+//	April 2014
+
+
+/***************************************************************************
+
+  File:  classes/fm/disting.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definitions of the following functions:
+      void fm<Label>::disting(const fm<Label>& t)
+      void fm<Label>::disting(const fm<Label>& a, int n)
+
+    These functions are public members of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Cezar Campeanu               Initial version of source code
+    
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+          fm<Label>& fm<Label>::disting(const fm<Label>& t)
+
+  Description:
+    This function is a public member of the template class fm (declared 
+    in classes/re/fm.h).  
+    This function computes the fm for the distinguishability language
+    of an fm, i.e, the words that distinguish non-equivalent states.
+    
+    The function returns a reference to this fm.
+
+    This function can be called in the following way:
+      this_fm.disting(other_fm);
+
+  Parameters:
+    const fm<Label>& t - the fm which should be added to this fm
+
+  Return Value:
+    fm<Label>& - a reference to this fm
+
+  
+ ***************************************************************************/
+
+template <class Label>
+void	
+fm<Label>::disting(const fm<Label>& L)
+{
+	fm<Label> aL;
+	fm<Label> acL;
+	fm<Label> result;
+	aL=L;
+	acL=aL;
+	acL.complement();
+	aL.suffix();
+	aL.subset();
+	aL.complete();
+	aL.min_by_partition();
+	acL.suffix();
+	acL.subset();
+	acL.complete();
+	acL.min_by_partition();
+	result.cross_product(aL,acL);
+	result.subset();
+	result.complete();
+	result.min_by_partition();
+	result.renumber(0);
+	*this=result;
+}
+
+
+
+/***************************************************************************
+
+        void fm<Label>::disting(const fm<Label>& a, int n)
+
+  Description:
+    This function is a public inline member of the template class fm 
+    (declared in classes/re/fm.h).  This function adds the parameter 
+    of number of iterations.  
+    The parameter int is limited to 3(for over 3 we get same fm).
+    The function returns a reference to this fm.
+
+    This function can be called in the following way:
+      this_fm.disting(new_fm,n);
+
+  Parameters:
+    const fm<Label>& a - the  fm.
+
+  Return Value:
+    fm<Label>& - a reference to this fm
+
+  
+ ***************************************************************************/
+
+template <class Label>
+void	
+fm<Label>::disting(const fm<Label>& L, int n)
+{
+	fm<Label> result;
+	fm<Label> t;
+	if (n>=1)result.disting(L);
+	if (n>=2)
+	  {
+	   t=result;
+	   result.disting(t);
+	  }
+	if (n>=3)
+	  {
+	   t=result;
+	   result.disting(t);
+	  }  
+	*this=result;
+}
+

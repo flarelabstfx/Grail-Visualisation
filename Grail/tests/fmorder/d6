@@ -1,0 +1,12 @@
+(START) |- 0
+(START) |- 1
+1 a 2
+1 b 3
+2 a 1
+2 b 3
+3 a 2
+3 b 3
+0 -| (FINAL)
+1 -| (FINAL)
+2 -| (FINAL)
+3 -| (FINAL)

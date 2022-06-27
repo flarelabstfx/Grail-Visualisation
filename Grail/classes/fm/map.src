@@ -1,0 +1,32 @@
+// added by ray in 2010 summer, for attach.src to adjust fm in any numbering ways
+//set mapping relation ship between all_state and normal states.
+
+template <class Label>
+void
+fm<Label>::set_map()
+{	
+	
+	set<state> tmp;
+	tmp.clear();
+	map.clear();
+	
+	states(tmp);
+	
+	for(int a=0;a<tmp.size();a++)
+		map+=tmp[a].value();
+
+if (debug>8)
+{
+std::cout<<std::endl<<"debug info from method: fm<Label>::set_map()"<<std::endl;
+for(int a=0;a<map.size();a++)
+std::cout<<map[a]<<" mapping to all_states[ "<<a<<" ]"<<std::endl;
+std::cout<<std::endl;
+
+}
+	
+	
+	
+	
+}
+
+

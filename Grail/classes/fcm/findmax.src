@@ -1,0 +1,63 @@
+template<class Label>
+class fm;
+
+void myPause(const char* s);
+
+template<class Label>
+int 
+fcm<Label>::find_max()
+{
+	//We're going to change this fm, so save a copy
+	fcm<Label> temp;
+
+	temp=*this;
+
+	//Reduce this fm to only reachable and useful states
+	//Which eliminates useless cycles such as sink states
+	//Added by Brodie and Marcus Aug. 7, 2007
+	this->reachable_fm();
+	this->reverse();
+	this->reachable_fm();
+	this->reverse();		
+
+	int i, j, k;
+	
+	attach();
+
+	array<int> ilevel = find_ilevels();
+	
+	int n = all_states.size();
+
+	array<int> current, next;
+
+	current += fm<Label>::start_states[0].value();
+
+	int max = -1;
+
+	while (current.size() > 0)
+	{
+		for (i = 0; i < current.size(); i++)
+		{
+			for (j = 0; j < (*all_states[current[i]]).size(); j++)
+			{
+				k = (*all_states[current[i]])[j].get_sink().value();
+				if ((k != current[i]) && (ilevel[k] >= 0))
+				{
+					next += k;
+				}
+			}
+		}
+
+		next.unique();
+		
+		current = next;
+		next.clear();
+		max++;
+	}
+
+	//Make sure we don't change this fm
+	*this=temp;
+if (debug>8)
+	std::cout<<"in fcm::find_max(), max is found to be "<<max<<std::endl;
+	return max;
+}

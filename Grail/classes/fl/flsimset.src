@@ -1,0 +1,533 @@
+/***************************************************************************
+Added by Ray summer 2011
+
+  File:  classes/fl/flsimset.src    
+  --------
+
+  void		fl<Label>::flsimset() const
+
+  Description:
+    This function computes the similarity of the words
+  Parameters:
+    void
+  
+ ***************************************************************************/
+
+template<class Label>
+string<Label> get_rid_pre(string<Label> word,string<Label> pre) ;
+
+
+
+
+template<class Label>
+void fl<Label>::flsimset() const
+{
+
+array<array<string<Label> > > simsets;
+for (int a=0;a<words.size();a++)
+  {
+        array<string<Label> > temp;
+        temp+=words[a];
+        simsets+=temp;
+
+  }
+
+
+
+for (int i=0;i<words.size();i++)
+{
+for (int j=i+1;j<words.size();j++)
+{
+if(is_sim(words[i],words[j]))
+{
+simsets[i]+=words[j];
+simsets[j]+=words[i];
+}
+}
+}
+
+//sort
+for(int a=0;a<simsets.size();a++)
+        simsets[a].sort_length();
+
+
+
+
+
+//out put 
+
+//count simsets without duplicated
+int count=simsets.size();
+
+std::cout<<std::endl<<"Step 1A: Sets of similar words for each word in L:"<<std::endl
+<<"(The words in each set are not guarenteed to be similar with each other)"
+<<std::endl<<std::endl;
+
+for (int a=0;a<words.size();a++)
+{
+bool same =false;
+
+
+for(int aa=0;aa<a;aa++)
+{
+
+if(simsets[aa]==simsets[a])
+        {
+        std::cout<<a+1<<" . word ["<< words[a]<<"] : "<<"same as "<<aa+1<<std::endl;
+        count--; same =true;
+        break;
+        }
+
+
+}
+
+
+
+if(same)
+        continue;
+
+
+
+std::cout<<a+1<<" . word ["<< words[a]<<"] is similar to: ";
+
+std::cout<<"{"<<simsets[a][0];
+for(int b=1;b<simsets[a].size();b++)
+{
+std::cout<<", "<<simsets[a][b];
+}
+std::cout<<"}"<<std::endl;
+
+}
+
+std::cout<<std::endl<<"Distinguishable sets count: "<<count<<std::endl;
+
+//now according to what we have ,make canoniocal partition
+set<set<string<Label> > > partition;
+for(int i=0;i<words.size();i++)
+{
+bool found_p=false;
+for(int j=0;j<partition.size();j++)
+{
+bool in_this_p=true;
+for(int k=0;k<partition[j].size();k++)
+{
+int word_num=words.member(partition[j][k]);
+if(simsets[word_num].member(words[i])<0)
+        {
+        in_this_p=false;
+        break;
+        }
+}
+if(in_this_p)
+        {
+        partition[j]+=words[i];
+        found_p=true;
+        break;
+        }
+
+
+}
+if(!found_p)
+        {
+        set<string<Label> > temp;
+        temp+=words[i];
+        partition+=temp;
+        }
+}
+
+
+
+
+//now output the simsets, in which any two are similar
+
+std::cout<<std::endl<<"Step 1B:This is the partitions in which any two words"
+<<" will be similar  to each other:"<<std::endl;
+
+for (int a=0;a<partition.size();a++)
+{
+std::cout<<"Partition "<<a+1<<" : { "<<partition[a][0];
+
+for (int b=1;b<partition[a].size();b++)
+                std::cout<<"," <<partition[a][b];
+
+std::cout<<" }"<<std::endl;
+}
+
+std::cout<<std::endl;
+
+//not end yet now we need to think of the words that is shorter than l but not 
+//in language L and the words longer than l
+
+//1.get alphabets
+set<Label> alphabets;
+get_alphabet(alphabets);
+
+
+//2.get the longest word length
+int max_length=0;
+for(int i=0;i<words.size();i++)
+{
+if(words[i].size()>max_length)
+{
+max_length=words[i].size();
+}
+}
+
+//3.intial and add the empty string
+set<string<Label> > all_words;
+
+string<Label> emptystring;
+emptystring.clear();
+all_words+=emptystring;
+int start_point=0;
+int end_point=0;
+// looping until we add all the words of this alphabet with lenght<=l
+for(int i=0;i<max_length;i++)
+{
+start_point=end_point;
+end_point=all_words.size();
+for (int j=start_point;j<end_point;j++)
+        {
+        //for each word we already have  
+        for(int k=0;k<alphabets.size();k++)
+                {
+                string<Label> temp(all_words[j]);
+                temp+=alphabets[k];
+                all_words+=temp;
+                
+                }
+        }
+}
+//debug
+if(debug>0)
+{
+std::cout<<std::endl<<"all words: {"<<all_words[0];
+for (int a=1;a<all_words.size();a++)
+{
+std::cout<<","<<all_words[a];
+}
+std::cout<<"}"<<std::endl;
+}
+
+//now we focus on those not in the language
+set<string<Label> > complements;
+complements=all_words;//just a shadow copy
+complements-=words;
+
+
+
+
+//now add a string longer than l, this string represents all the strings longer
+//than l
+string<Label> longest;
+longest.clear();
+for(int i=0;i<=max_length;i++)
+{
+longest+=alphabets[0];
+}
+complements+=longest;
+
+complements.sort_length();
+
+
+//debug
+//if(debug>0)
+{
+std::cout<<std::endl<<"complements of L: {"<<complements[0];
+for (int a=1;a<complements.size();a++)
+{
+std::cout<<","<<complements[a];
+}
+std::cout<<"}"<<std::endl<<"the word ["<<longest<<"] represents all words longer than l"<<std::endl;
+}
+
+//Now working on the complements words and get the same result
+
+array<array<string<Label> > > simsets_c;
+for (int a=0;a<complements.size();a++)
+  {
+        array<string<Label> > temp;
+        temp+=complements[a];
+        simsets_c+=temp;
+
+  }
+
+
+
+for (int i=0;i<complements.size();i++)
+{
+for (int j=i+1;j<complements.size();j++)
+{
+if(is_sim(complements[i],complements[j]))
+{
+simsets_c[i]+=complements[j];
+simsets_c[j]+=complements[i];
+}
+}
+}
+
+//sort
+for(int a=0;a<simsets_c.size();a++)
+        simsets_c[a].sort_length();
+
+
+
+
+
+//out put 
+
+//count simsets without duplicated
+int count_c=simsets_c.size();
+
+std::cout<<std::endl<<"Step 2A: Sets of similar words for each word not in L:"<<std::endl
+
+<<"(The words in each set are not guarenteed to be similar with each other)"
+<<std::endl<<std::endl;
+
+for (int a=0;a<complements.size();a++)
+{
+bool same =false;
+
+
+for(int aa=0;aa<a;aa++)
+{
+
+if(simsets_c[aa]==simsets_c[a])
+        {
+        std::cout<<a+1<<" . word ["<< complements[a]<<"] : "<<"same as "<<aa+1<<std::endl;
+        count_c--; same =true;
+        break;
+        }
+
+
+}
+
+
+
+if(same)
+        continue;
+
+
+
+std::cout<<a+1<<" . word ["<< complements[a]<<"] is similar to: ";
+
+std::cout<<"{"<<simsets_c[a][0];
+for(int b=1;b<simsets_c[a].size();b++)
+{
+std::cout<<", "<<simsets_c[a][b];
+}
+std::cout<<"}"<<std::endl;
+
+}
+
+std::cout<<std::endl<<"Distinguishable sets count: "<<count_c<<std::endl;
+
+//now according to what we have ,make canoniocal partition
+set<set<string<Label> > > partition_c;
+for(int i=0;i<complements.size();i++)
+{
+bool found_p=false;
+for(int j=0;j<partition_c.size();j++)
+{
+bool in_this_p=true;
+for(int k=0;k<partition_c[j].size();k++)
+{
+int word_num=complements.member(partition_c[j][k]);
+if(simsets_c[word_num].member(complements[i])<0)
+        {
+        in_this_p=false;
+        break;
+        }
+}
+if(in_this_p)
+        {
+        partition_c[j]+=complements[i];
+        found_p=true;
+        break;
+        }
+
+
+}
+if(!found_p)
+        {
+        set<string<Label> > temp;
+        temp+=complements[i];
+        partition_c+=temp;
+        }
+}
+
+
+
+
+//now output the simsets, in which any two are similar
+
+std::cout<<std::endl<<"Step 2B:This is the partitions in which any two words"
+<<" will be similar  to each other:"<<std::endl;
+for (int a=0;a<partition_c.size();a++)
+{
+std::cout<<"Partition "<<a+1+partition.size()<<" : { "<<partition_c[a][0];
+
+for (int b=1;b<partition_c[a].size();b++)
+                std::cout<<"," <<partition_c[a][b];
+
+std::cout<<" }"<<std::endl;
+}
+
+std::cout<<std::endl;
+
+
+
+
+std::cout<<"SO the maximal dissimlar sets are:"<<std::endl;
+for (int a=0;a<partition.size();a++)
+{
+std::cout<<"Partition "<<a+1<<" : { "<<partition[a][0];
+
+for (int b=1;b<partition[a].size();b++)
+                std::cout<<"," <<partition[a][b];
+
+std::cout<<" }"<<std::endl;
+}
+std::cout<<std::endl;
+for (int a=0;a<partition_c.size();a++)
+{
+std::cout<<"Partition "<<a+1+partition.size()<<" : { "<<partition_c[a][0];
+
+for (int b=1;b<partition_c[a].size();b++)
+                std::cout<<"," <<partition_c[a][b];
+
+std::cout<<" }"<<std::endl;
+}
+
+
+
+}
+
+
+
+
+template<class Label>
+bool  fl<Label>:: is_sim(string<Label>& a,string<Label>& b) const
+{
+
+
+//bool toreturn=false;
+
+//shorter and longer
+string<Label> shorter;
+string<Label> longer;
+if(a.size()<=b.size())
+{
+shorter=string<Label>(a);longer=string<Label>(b);
+}
+else
+{
+shorter=string<Label>(b);longer=string<Label>(a);
+}
+
+if(debug>0)
+        std::cout<<std::endl<<"working onw pair"<<shorter<<","<<longer<<std::endl;
+
+
+//get the longest word length
+int max_length=0;
+for(int i=0;i<words.size();i++)
+{
+if(words[i].size()>max_length)
+{
+max_length=words[i].size();
+}
+}
+
+
+if(longer.size()==max_length)
+        return true;//always similar with biggest one
+
+
+
+for (int i=0;i<words.size();i++)
+{
+//if(shorter==words[i] || longer==words[i])
+  //      continue;
+
+//this word shorter than both
+if(shorter.size()>=words[i].size())
+        continue;
+
+//if the shorter one is the prefix of this word
+string<Label> temp;
+
+temp = get_rid_pre(words[i],shorter);
+
+if(!temp.is_null())
+{
+string<Label> back(longer);
+
+longer+=temp;
+if(words.member(longer)<0&&longer.size()<=max_length)
+        return false;
+//else if(words.member(longer)>=0)
+ //       toreturn =true;
+
+longer=string<Label>(back);
+}
+
+temp.clear();
+//if the longer one is prefix of this word
+temp = get_rid_pre(words[i],longer);
+if(!temp.is_null())
+{
+string<Label> back(shorter);
+shorter+=temp;
+if(words.member(shorter)<0&&shorter.size()<=max_length)
+        return false;
+//else if(words.member(shorter)>=0)
+ //       toreturn =true;
+shorter=string<Label>(back);
+}
+
+
+}
+
+return true;
+
+}
+
+template<class Label>
+string<Label> get_rid_pre(string<Label> word,string<Label> pre) 
+{
+
+
+if(debug>0)
+        std::cout<<"try to reduce prefix with "<<word<<","<<pre<<std::endl;
+
+string<Label> null_str;
+
+null_str.clear();
+
+//if the word is shorter than the prefix
+if(word.size()<=pre.size())
+        return null_str;
+string<Label> toreturn(word);
+
+for(int a=0;a<pre.size();a++)
+{
+if(pre[a]!=word[a])
+        return null_str;
+else
+        toreturn.remove(0);
+}
+
+if(debug>0)
+        std::cout<<"reduce prefix"<<toreturn<<std::endl;
+
+
+
+return toreturn;
+
+
+}
+
+
+
+

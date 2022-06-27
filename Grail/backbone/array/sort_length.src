@@ -1,0 +1,16 @@
+//#This is modified from sort.src by ray and sherry in summer 2010
+// sort according to length first
+
+template <class Item>
+void
+array<Item>::sort_length() const
+{
+	array<Item>*	c_a_const;
+
+
+	qsort(p, sz, sizeof(Item),
+		(int(*)(const void*,const void*)) array<Item>::compare_length);
+
+	c_a_const = (array<Item>*) this;
+	c_a_const->sorted = 0;
+}

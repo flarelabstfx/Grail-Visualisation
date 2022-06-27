@@ -1,0 +1,8 @@
+symbols: [a,b]
+states:  2
+finals:  2
+head: 
+0 1
+0 1
+3 0
+0 1

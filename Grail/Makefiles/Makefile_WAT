@@ -1,0 +1,65 @@
+#SYS=WAT  if you are using WAT	- if you're using Watcom under DOS
+
+
+WATCC=wcl386
+
+
+WATFL =  -bt=dos -cc++ -zq -zp4 -5r -DWATCOM
+#WATFL =  -bt=dos -cc++ -oneatx -zq -zp4 -5r -DWATCOM
+
+
+all:
+
+	@$(MAKE) clean "MAKE=$(MAKE)"
+
+	@$(MAKE) compile TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile TYPE=mlyint "MAKE=$(MAKE)"
+
+	@$(MAKE) install TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install TYPE=re
+#	@$(MAKE) install TYPE=mlychar
+#	@$(MAKE) install TYPE=mlyint
+	@echo "Everything made"
+
+
+	
+compile:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(WATCC) "CCFLAGS=$(WATFL)" BIN=..\binaries\486\ 
+	@cd ..
+	
+
+
+install:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+#	@cp char/GrailVersion.txt ${BIN}
+	@cd ..
+
+
+checkout:
+	@cd tests
+	@check_dos
+	@cd ..
+	@echo Testing complete.
+
+
+clean:
+	@cd char
+	@$(MAKE) clean_DOS
+	@cd ..\re
+	@$(MAKE) clean_DOS 
+	@cd ..\mlychar
+	@$(MAKE) clean_DOS
+	@cd ..\mlyint 
+	@$(MAKE) clean_DOS
+	@cd ..
+	@del /F /Q bin\* mon.out core tests\errors\*
+	@echo Everything clean.
+	
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

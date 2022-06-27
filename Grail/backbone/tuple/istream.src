@@ -1,0 +1,37 @@
+//#This comes from 3.1.4-new
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent.
+//	February 1995
+
+template <class Input,class Iput, class Output>
+std::istream&
+operator>>(std::istream& is, tuple<Input,Iput, Output>& p)
+{
+	char token;
+	Input	i;
+    Iput   l;
+	Output	o;
+
+	// get the opening bracket
+
+	is >> token;
+
+	is >> i;
+
+is >> token;//Yong
+
+is >> l;//Yong
+
+	// get the comma
+
+	is >> token;
+
+	is >> o;
+
+	// get the closing bracket
+
+	is >> token;
+
+	p.assign(i, l, o);;
+	return  is;
+}

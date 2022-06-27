@@ -1,0 +1,64 @@
+#SYS: this is for borland systme
+#SYS=BORLAND
+
+BORLANDCC=cpp
+
+BORLANDFL = -o grail.out
+
+all:
+
+	@$(MAKE) clean_$(SYS) "MAKE=$(MAKE)"
+
+	@$(MAKE) compile_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlyint "MAKE=$(MAKE)"
+
+	@$(MAKE) install_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install_$(SYS) TYPE=re
+#	@$(MAKE) install_$(SYS) TYPE=mlychar
+#	@$(MAKE) install_$(SYS) TYPE=mlyint
+	@echo "Everything made"
+
+
+
+
+compile:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(BORLANDCC) "CCFLAGS=$(BORLANDFL)" BIN=..\binaries\486\ 
+#	@cp char/GrailVersion.txt ${BIN}
+	@cd ..
+	
+
+install:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+	@cd ..
+
+
+
+checkout:
+	@cd tests
+	@check_dos
+	@cd ..
+	@echo Testing complete.
+
+
+
+clean:
+	@cd char
+	@$(MAKE) clean_DOS
+	@cd ..\re
+	@$(MAKE) clean_DOS 
+	@cd ..\mlychar
+	@$(MAKE) clean_DOS
+	@cd ..\mlyint 
+	@$(MAKE) clean_DOS
+	@cd ..
+	@del /F /Q bin\* mon.out core tests\errors\*
+	@echo Everything clean.
+	
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

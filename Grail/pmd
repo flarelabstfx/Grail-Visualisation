@@ -1,0 +1,16 @@
+#//This comes from 3.1.4-new
+
+mpiCCcmd=`which mpiCC 2>/dev/null`
+
+
+cd classes/fm/
+
+if [ -x mpiCCcmd ]
+then
+ mpiCC -o parmin.out parMPI.cpp 
+ cp parmin.out ../../bin/.
+ cd ../../bin/
+ ln -s ../binaries/linux/char.out parmin
+ 
+fi
+  

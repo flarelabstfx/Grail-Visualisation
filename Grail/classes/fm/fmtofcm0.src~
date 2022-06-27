@@ -1,0 +1,809 @@
+/*=================================================================
+ This is the implementation of the algorithm in the paper
+ "Minmal cover-automata for finite languages"
+ C.Campeanu, N,Stantean, S,Yu
+ Theoretical Computer Science 267(2001) 3-16
+ ------------------------------------------------------------------
+ Code: Ray Zhou & Sherry(Xu Han) in UPEI, Supervisor: Dr.Campeanu
+ ==================================================================*/
+
+template<class Label>
+  class fcm;
+template<class Label>
+  class atstate;
+template<class Label>
+  class array;
+template<class Label>
+  class set;
+//template<class Label>
+//class list;
+
+template<class Label>
+  atstate<Label>*
+  mergeTo(array<set<atstate<Label>*> >& sim_sets,
+      array<atstate<Label>*>& original, array<atstate<Label>*>& merged,
+      atstate<Label>* obj);
+
+template<class Label>
+  void
+  fm<Label>::fmtofcm0(fcm<Label> & fcmd)
+  {
+//for debug info
+    if (debug > 8)
+      {
+        std::cout << "Input A: " << std::endl << *this << std::endl;
+      }
+
+    /*  old algorithm
+     reachable_fm();
+     reverse();
+     reachable_fm();
+     reverse();
+
+     // if it is a empty fm return a simple fcm
+     if (number_of_states()==0)
+     {
+     if (debug>8){std::cout<<"empty fm after reduce!"<<std::endl;}
+
+     clear_all();
+     inst<Label> tmparc;
+     tmparc.assign(0,'a',0);  // not char?
+     add_instruction(tmparc);
+     state tmpstate(0);
+     set<state> startset;
+     startset+=tmpstate;
+     set_starts(startset);
+     fcmd.copyfm(*this);
+     fcmd.set_max(0);
+     clear_all();
+
+
+     return;
+     }
+     */
+
+    reduce();
+
+//for debug info
+    if (debug > 8)
+      {
+        std::cout << "in fmtofcm0 reduced " << std::endl << *this << std::endl;
+      }
+
+    canonical_numbering();
+    //if(debug!=-1){canonical_numbering();}// sepecial debug for nfatodfca, cause the dfa is Ok to use
+    complete();
+
+    int number = number_of_states();
+    int maxA = max_state().value() + 1;
+
+//for debug info
+    if (debug > 8)
+      {
+        std::cout << "After canonical numbering: and completed " << std::endl
+            << *this << std::endl;
+        std::cout << "max state is " << max_state().value()
+            << ", number of states is" << number_of_states() << std::endl;
+      }
+
+    set<Label> alpha;
+    alpha.clear();
+    labels(alpha);
+    set_map();
+    int l = find_max(); // help method
+
+    //for debug info
+    if (debug > 8)
+      {
+        std::cout << "longest string is " << l << std::endl;
+      }
+
+    // construct the DFA B
+
+    fm<Label> fmB;
+    fmB.clear();
+
+    inst<Label> tmpInst;
+    //add instructions to B
+    for (int a = 0; a < l + 1; a++)
+      {
+        state tmpSource(a);
+        state tmpSink(a + 1);
+
+        //if(a==0){tmpSource.start();}
+        //tmpSource.final();
+        //tmpSink.final();
+
+        for (int b = 0; b < alpha.size(); b++)
+          {
+            //inst<Label> tmpInst;
+            tmpInst.assign(a, alpha[b], a + 1); ////std::cout<<"add inst"<<tmpInst<<std::endl;
+            fmB.add_instruction(tmpInst);
+          }
+      }
+
+    //handle start and final
+    set<state> statesB, finalsB;
+    fmB.states(statesB);
+    finalsB = statesB;
+    finalsB -= finalsB[finalsB.size() - 1];
+    fmB.set_finals(finalsB);
+    statesB.clear();
+    finalsB.clear();
+    state tmpstate(0);
+    statesB += tmpstate;
+    fmB.set_starts(statesB);
+
+    //sink
+    for (int b = 0; b < alpha.size(); b++)
+      {
+        state tmpSource(l + 1);
+        state tmpSink(l + 1);
+        //inst<Label> tmpInst;
+        tmpInst.assign(tmpSource, alpha[b], tmpSink); ////std::cout<<"add inst"<<tmpInst<<std::endl;
+        fmB.add_instruction(tmpInst);
+      }
+
+//for debug info
+    if (debug > 8)
+      {
+        std::cout << std::endl << "Construct the fmB : " << std::endl << fmB
+            << std::endl;
+      }
+
+    //std cartesian product for dfa C
+    unattach();
+    fm<Label> fmC;
+    fmC.clear();
+    fmC.cross_product(*this, fmB);
+
+    fmC.reachable_fm();
+
+    state sinkC = fmC.max_state();
+
+    set<Label> alphaC;
+    fmC.labels(alphaC);
+
+    set<state> state_c;
+
+    fmC.states(state_c);
+    state_c.sort(); //this sort should be enough   ...?
+
+//for debug info
+    if (debug > 0)
+      {
+        std::cout << std::endl
+            << "In fm::fmtofcm0:cartesian product of a&b,after reachable, fmC: "
+            << std::endl << fmC << std::endl;
+        for (int a = 0; a < state_c.size(); a++)
+          std::cout << a << ".state " << state_c[a] << " comes from "
+              << state_c[a].value() % maxA << " with level "
+              << state_c[a].value() / maxA << std::endl;
+      }
+
+//for special debug info for nfatodfca
+    if (debug == -1)
+      {
+        std::cout << "in fm:fmtofcm0(), special debug info written into file"
+            << std::endl;
+        std::ofstream myfile;
+        char* tempname;
+        tempname = new char(strlen(nfatodfca_name) + 30);
+        strcpy(tempname, nfatodfca_name);
+
+        myfile.open(strcat(tempname, "_Nfatodfca_Set_Info"), std::ios::app);
+        myfile << "SETINFO_BEGIN:ct\n";
+        for (int a = 0; a < state_c.size(); a++)
+          myfile << state_c[a] << " " << state_c[a].value() % maxA << std::endl;
+        myfile << "SETINFO_END\n";
+        myfile.close();
+
+      }
+
+    fmC.set_map(); //to keep the sequence  ,maybe a new method with state_c ?
+    fmC.attach();
+
+    //similar sets for each state
+    array<set<atstate<Label> *> > similar;
+
+    array<atstate<Label> *> fmCall_states = fmC.get_all();
+
+    for (int a = 0; a < fmCall_states.size(); a++)
+      {
+        set<atstate<Label> *> tmp;
+        similar += tmp;
+      }
+
+    //sets D
+    array<set<atstate<Label> *> > setD;
+    for (int a = 0; a < fmCall_states.size(); a++)
+      {
+        set<atstate<Label>*> tmp;
+        setD += tmp;
+      } //make sure enough space?
+
+    //add each element to its setD
+    for (int a = 0; a < fmCall_states.size(); a++)
+      {
+        atstate<Label>* tmpst = fmCall_states[a];
+        int toFinal = fmC.toFinal(*tmpst, sinkC); // help method
+
+        //std::cout<<(*fmCall_states[a])[0].get_source().value()<<"to final is"<<toFinal<<std::endl;
+
+        setD[toFinal + 1] += tmpst; //0 is unuseful, 1 is final and so on
+      }
+
+//for debug info
+    if (debug > 8)
+      {
+        std::cout << std::endl << "set_D is established:";
+        for (int a = 0; a < setD.size(); a++)
+          {
+            if (setD[a].size() > 0)
+              {
+                std::cout << std::endl << "D_" << a - 1 << ": ";
+                for (int b = 0; b < setD[a].size(); b++)
+                  std::cout << fmC.map[fmCall_states.member(setD[a][b])] << ", ";
+              }
+          }
+
+        std::cout << std::endl;
+      }
+
+//for debug
+    if (debug > 8)
+      {
+        std::cout << "currently similar sets should be all empty" << std::endl;
+        for (int a = 0; a < similar.size(); a++)
+          {
+            std::cout << a << " . " << "similar set of "
+                << (*(fmCall_states[a]))[0].get_source().value() << " :";
+            for (int b = 0; b < similar[a].size(); b++)
+              std::cout << (*(similar[a][b]))[0].get_source().value() << ", ";
+            std::cout << std::endl;
+
+          }
+      }
+
+    /*
+     (2) Initialize the similarity relation by specifying:
+     (a) For all (n − 1; p); (n − 1; q) ∈ QC , (n − 1; p) ∼C (n − 1; q).
+     */
+    array<int> sink_a;
+    for (int a = 0; a < fmCall_states.size(); a++)
+      {
+        if (fmC.map[a] % maxA == number - 1)
+          sink_a += a;
+      }
+
+    //all_states is already sorted, so sink_a[0] is the first
+    for (int a = 0; a < sink_a.size() - 1; a++)
+      {
+        for (int b = a + 1; b < sink_a.size(); b++)
+          similar[sink_a[a]] += fmCall_states[sink_a[b]];
+      }
+
+//for debug
+    if (debug > 8)
+      {
+        std::cout << std::endl << "after 2(a):" << std::endl;
+        for (int a = 0; a < similar.size(); a++)
+          {
+            std::cout << std::endl << a << " . " << "similar set of "
+                << (*(fmCall_states[a]))[0].get_source().value() << " :";
+            for (int b = 0; b < similar[a].size(); b++)
+              std::cout << (*(similar[a][b]))[0].get_source().value() << ", ";
+          }
+        std::cout << std::endl << std::endl << "enter step 2(b)" << std::endl;
+      }
+
+//------------------------------------------------------------------------------------------
+
+    //2(b)
+    for (int a = 0; a < sink_a.size(); a++)
+      {
+        int i = l + 1 - fmC.map[sink_a[a]] / maxA;
+//std::cout<<"i"<<i<<std::endl;
+        if (i >= 0 && i <= l) //????????????????? 0 or 1???
+          {
+            for (int b = i; b <= l; b++)
+              {
+                for (int c = 0; c < setD[b + 1].size(); c++)
+                  { //similar(fmCall_states[sink_a[a]],setD[b+1][c]);// a new method to similar two sets
+//std::cout<<"b"<<b<<std::endl;
+                    if (debug > 8)
+                      {
+                        std::cout << "similar set in 2(b) for "
+                            << (*fmCall_states[sink_a[a]])[0].get_source().value()
+                            << " and "
+                            << (*(setD[b + 1][c]))[0].get_source().value()
+                            << std::endl;
+                      }
+
+                    if (sink_a[a] < fmCall_states.member(setD[b + 1][c]))
+                      similar[sink_a[a]] += setD[b + 1][c];
+                    else if (sink_a[a] > fmCall_states.member(setD[b + 1][c]))
+                      similar[fmCall_states.member(setD[b + 1][c])] +=
+                          fmCall_states[sink_a[a]];
+                  }
+
+              }
+          }
+
+      }
+
+//for debug
+    if (debug > 8)
+      {
+        std::cout << "after 2(b)" << std::endl;
+        for (int a = 0; a < similar.size(); a++)
+          {
+            std::cout << a << " . " << "similar set of "
+                << (*(fmCall_states[a]))[0].get_source().value() << " :";
+            for (int b = 0; b < similar[a].size(); b++)
+              std::cout << (*(similar[a][b]))[0].get_source().value() << ", ";
+            std::cout << std::endl;
+
+          }
+      }
+
+    //3
+    array<list<atstate<Label> *> > List;
+    for (int a = 0; a < setD.size(); a++)
+      {
+        list<atstate<Label> *> tmplist;
+        tmplist.clear();
+        List += tmplist; // initial the elements
+      }
+    if (debug > 8)
+      {
+        std::cout << std::endl << "step3, Lists established, going to step 4" << std::endl
+            << std::endl;
+      }
+
+    //4
+    for (int a = fmCall_states.size() - 1; a >= 0; a--)
+      { ////std::cout<<"fmCall_states"<<a<<std::endl;
+        if (sink_a.member(a) < 0)
+          {
+            int d = fmC.toFinal(*fmCall_states[a], sinkC);
+
+            //std::cout<<(*fmCall_states[a])[0].get_source().value()<<"shortest to final is"<<d<<std::endl;
+
+            if (List[d + 1].size() > 0)
+              {
+                bool sim;
+                for (int e = 0; e < List[d + 1].size(); e++)
+                  {
+                    sim = true;
+                    //determine if next all similar
+                    atstate<Label> tmpats = *List[d + 1][e];
+
+                    for (int f = 0; f < alphaC.size(); f++)
+                      {
+                        Label tmplb = alphaC[f];
+//std::cout<<"on label"<<tmplb<<std::endl;
+                        int min, max, aa, bb;
+                        //get the next state from this label
+                        for (int g = 0; g < (*fmCall_states[a]).size(); g++)
+                          {
+                            if ((*fmCall_states[a])[g].get_label() == tmplb)
+                              aa = fmC.map.member(
+                                  (*fmCall_states[a])[g].get_sink().value());
+                          }
+
+                        for (int g = 0; g < tmpats.size(); g++)
+                          {
+                            if (tmpats[g].get_label() == tmplb)
+                              bb = fmC.map.member(tmpats[g].get_sink().value());
+                          }
+
+                        if (aa > bb)
+                          {
+                            min = bb;
+                            max = aa;
+                          }
+                        else
+                          {
+                            min = aa;
+                            max = bb;
+                          }
+//std::cout<<"min"<<min<<"max"<<max<<std::endl;
+                        //if the two states are similared :
+                        if (similar[min].member(fmCall_states[max]) < 0
+                            && min != max)
+                          {
+                            sim = false;
+                            break;
+                          }
+                        //std::cout<<"sim"<<sim<<std::endl;
+//std::cout<<"sim"<<sim<<std::endl;
+                      }
+
+//std::cout<<"? sim ?"<<sim<<" for "<<(*fmCall_states[a])[0].get_source().value()<<"and"<<(*(List[d+1][e]))[0].get_source().value()<<std::endl<<std::endl;
+                    if (sim)
+                      {
+
+                        //similar((fmCall_states[a],List[d+1][e]);
+                        if (a < fmCall_states.member(List[d + 1][e]))
+                          {
+                            similar[a] += List[d + 1][e];
+                            //std::cout<<a<<"add similar and size is"<<similar[a].size()<<std::endl;
+                          }
+                        else if (a > fmCall_states.member(List[d + 1][e]))
+                          {
+                            similar[fmCall_states.member(List[d + 1][e])] +=
+                                fmCall_states[a];
+                            //std::cout<<fmCall_states.member(List[d+1][e])<<"add similar and size is"<<similar[fmCall_states.member(List[d+1][e])].size()<<std::endl<<std::endl;
+                          }
+
+                        if (debug > 8)
+                          {
+
+                            std::cout << "similar found in step 4 for "
+                                << (*fmCall_states[a])[0].get_source().value()
+                                << " and "
+                                << (*(List[d + 1][e]))[0].get_source().value()
+                                << std::endl;
+
+                            std::cout << "similar states :" << std::endl;
+                            for (int a = 0; a < similar.size(); a++)
+                              {
+                                std::cout << a << " . " << "similar set of "
+                                    << (*(fmCall_states[a]))[0].get_source().value()
+                                    << " :";
+                                for (int b = 0; b < similar[a].size(); b++)
+                                  std::cout
+                                      << (*(similar[a][b]))[0].get_source().value()
+                                      << ", ";
+                                std::cout << std::endl;
+                              }
+                          }
+
+                      }
+                  }
+              }
+            //std::cout<<"List increase,no."<<d<<std::endl;
+            List[d + 1] += fmCall_states[a]; //plus one to match setD
+          }
+
+      }
+
+//-------------------------------------------------------------------------------------------------------------
+
+//for debug
+    if (debug > 0)
+      {
+        std::cout << "In fm::fmtofcm0(), after step 4" << std::endl;
+        for (int a = 0; a < similar.size(); a++)
+          {
+            std::cout << a << " . " << "similar set of "
+                << (*(fmCall_states[a]))[0].get_source().value() << " :{";
+            for (int b = 0; b < similar[a].size(); b++)
+              std::cout << (*(similar[a][b]))[0].get_source().value() << ", ";
+            std::cout << " }" << std::endl;
+
+          }
+      }
+
+// for special debug info of nfatodfca
+
+    if (debug == -1)
+      { // first get the merge sets
+        array<set<atstate<Label> *> > debugsim;
+        array<set<int> > setInfo, todel;
+        debugsim = similar;
+        array<atstate<Label> *> counted;
+//unique
+        for (int a = 0; a < similar.size(); a++)
+          {
+            for (int b = 0; b < similar[a].size(); b++)
+              {
+                atstate<Label> * temp = (similar[a][b]);
+                std::cout << "look" << (*(temp))[0].get_source().value();
+                if (counted.member(temp) < 0)
+                  {
+                    counted += temp;
+                    std::cout << "get" << (*(temp))[0].get_source().value() << std::endl;
+                    ;
+                  }
+                else
+                  {
+                    debugsim[a] -= temp;
+                    std::cout << "del" << (*(temp))[0].get_source().value() << std::endl;
+                    ;
+                  }
+              }
+          }
+
+        set<int> countedNum;
+//construct the int array
+        for (int a = 0; a < debugsim.size(); a++)
+          {
+            set<int> tempset;
+            setInfo += tempset;
+//for debug
+            std::cout << "name:::" << (*(fmCall_states[a]))[0].get_source().value()
+                << std::endl;
+            setInfo[a] += (int) ((*(fmCall_states[a]))[0].get_source().value());
+
+            for (int b = 0; b < debugsim[a].size(); b++)
+              {
+                setInfo[a] += (*(debugsim[a][b]))[0].get_source().value();
+                countedNum += (*(debugsim[a][b]))[0].get_source().value();
+                std::cout << "counted" << (*(debugsim[a][b]))[0].get_source().value()
+                    << std::endl;
+              }
+          }
+
+//for debug
+        std::cout << "debug info" << std::endl;
+        for (int a = 0; a < setInfo.size(); a++)
+          {
+            for (int b = 0; b < setInfo[a].size(); b++)
+              std::cout << setInfo[a][b] << " ";
+            std::cout << "setInfo" << std::endl;
+          }
+
+//delete merged states
+        for (int a = 0; a < setInfo.size(); a++)
+          {
+            if (countedNum.member(setInfo[a][0]) >= 0)
+              {
+                todel += setInfo[a];
+              }
+          }
+//for debug
+        for (int a = 0; a < todel.size(); a++)
+          {
+            for (int b = 0; b < todel[a].size(); b++)
+              std::cout << todel[a][b] << " ";
+            std::cout << std::endl;
+          }
+
+        setInfo -= todel;
+
+// write in file
+        std::ofstream myfile;
+        char* tempname;
+        tempname = new char(strlen(nfatodfca_name) + 30);
+        strcpy(tempname, nfatodfca_name);
+        myfile.open(strcat(tempname, "_Nfatodfca_Set_Info"), std::ios::app);
+        myfile << "SETINFO_BEGIN:dc\n";
+        for (int a = 0; a < setInfo.size(); a++)
+          {
+            myfile << setInfo[a][0] << " ";
+            for (int b = 0; b < setInfo[a].size(); b++)
+              myfile << setInfo[a][b] << " ";
+            myfile << std::endl;
+          }
+
+        myfile << "SETINFO_END\n";
+        myfile.close();
+
+      }
+
+// merge similar states
+    array<atstate<Label> *> allstates_d = fmCall_states;
+
+    for (int a = 0; a < similar.size(); a++)
+      {
+        allstates_d -= similar[a];
+        //std::cout<<"simlar size"<<a<<similar[a].size()<<std::endl;
+      }
+
+//std::cout<<"after merge we have states"<<allstates_d.size()<<std::endl;
+
+// final is final ,all we need is to change sink states
+    for (int a = 0; a < allstates_d.size(); a++)
+      {
+        for (int b = 0; b < (*allstates_d[a]).size(); b++)
+          {
+            atstate<Label>* thesink = fmCall_states[fmC.map.member(
+                (*(allstates_d[a]))[b].get_sink().value())];
+
+            if (allstates_d.member(thesink) < 0) //aways <0?
+              {
+                atstate<Label>* newsink = mergeTo(similar, fmCall_states,
+                    allstates_d, thesink); // help method
+                state tmpsink(fmC.map[fmCall_states.member(newsink)]);
+                (*allstates_d[a])[b].assign((*allstates_d[a])[b].get_source(),
+                    (*allstates_d[a])[b].get_label(), tmpsink);
+
+              }
+
+          }
+
+      }
+
+    fm<Label> fmD;
+
+//copy info to fmD from allstates_d
+
+    array<int> mapd;
+
+    for (int a = 0; a < allstates_d.size(); a++)
+      mapd += fmC.map[fmCall_states.member(allstates_d[a])];
+
+    fmD.setmap(mapd);
+    fmD.setallstates(allstates_d);
+    fmD.set_attach(true);
+    fmD.unattach();
+    set<state> startC;
+    fmD.set_starts(fmC.starts(startC));
+
+// transform D to a fcm format
+    //std::cout<<"d"<<std::endl<<fmD<<std::endl;
+    fmD.sort_arc_final();
+    if (debug > 0)
+      {
+        std::cout << std::endl << "After merging, the result:" << std::endl;
+        std::cout << fmD;
+      }
+
+    fmD.canonical_numbering();
+    fcmd.copyfm(fmD);
+    fcmd.set_max(l);
+
+    clear_all();
+    fmB.clear_all();
+    fmC.clear_all();
+    fmD.clear_all();
+
+    if (debug > 8)
+      {
+        std::cout << "renumbered:" << std::endl;
+      }
+
+  }
+
+// help method 1
+template<class Label>
+  atstate<Label>*
+  mergeTo(array<set<atstate<Label>*> >& sim_sets,
+      array<atstate<Label>*>& original, array<atstate<Label>*>& merged,
+      atstate<Label>* obj)
+  {
+    for (int a = 0; a < sim_sets.size(); a++)
+      {
+        if (sim_sets[a].member(obj) >= 0 && merged.member(original[a]) >= 0)
+          { //std::cout<<"mergeTo"<<a<<std::endl;
+            return (original[a]);
+          }
+        else if (sim_sets[a].member(obj) >= 0 && merged.member(original[a]) < 0)
+          return mergeTo(sim_sets, original, merged, original[a]);
+
+      }
+
+  }
+
+// help method 2
+template<class Label>
+  int
+  fm<Label>::toFinal(atstate<Label>& ats, state& sinkC)
+  {
+    int toreturn = -1;
+    if (ats.final())
+      toreturn = 0;
+    else if ((!ats.final()) && ats.size() == 0)
+      toreturn = -1;
+    else
+      {
+        int sinkNum = ats.size();
+        int sink[sinkNum];
+        for (int n = 0; n < sinkNum; n++)
+          {
+            if (ats[n].get_sink() != sinkC)
+              sink[n] = toFinal(
+                  *all_states[map.member(ats[n].get_sink().value())], sinkC);
+            else
+              sink[n] = -1;
+          }
+        for (int n = 0; n < sinkNum; n++)
+          {
+            if ((sink[n] >= 0 && toreturn < 0)
+                || (sink[n] >= 0 && sink[n] < toreturn))
+              toreturn = sink[n];
+          }
+        if (toreturn > -1)
+          {
+            toreturn++;
+          }
+      }
+    return toreturn;
+
+  }
+
+//help method 3
+template<class Label>
+  int
+  fm<Label>::find_max()
+  {
+    int i, j, k;
+
+    attach();
+
+    array<int> ilevel = find_ilevels();
+
+    int n = all_states.size();
+
+    array<int> current, next;
+
+    current += start_states[0].value();
+
+    int max = -1;
+
+    while (current.size() > 0)
+      {
+        for (i = 0; i < current.size(); i++)
+          for (j = 0; j < (*all_states[map.member(current[i])]).size(); j++)
+            {
+              k = (*all_states[map.member(current[i])])[j].get_sink().value();
+              if ((k != current[i]) && (ilevel[k] >= 0))
+                {
+                  next += k;
+                }
+            }
+
+        next.unique();
+
+        current = next;
+        next.clear();
+        max++;
+      }
+
+    return max;
+  }
+
+//help method 4
+template<class Label>
+  array<int>
+  fm<Label>::find_ilevels()
+// This function uses a breadth first traversal of the fcm to find
+// the inverse level of each state.  This information is returned as an
+// array of integers.
+// An ilevel of -1 indicates that there is no path from that state
+// to a final state.
+  {
+    int i, j, k;
+
+    attach();
+    array<atstate<Label> *> inv = attach_inv();
+    array<int> ilevel;
+
+    array<int> current, next;
+
+    for (i = 0; i < all_states.size(); i++)
+      {
+        if ((*all_states[i]).final())
+          {
+            current += i;
+            ilevel += 0;
+          }
+        else
+          {
+            ilevel += -1;
+          }
+      }
+
+    int ilevel_count = 1;
+    while (current.size() > 0)
+      {
+        for (i = 0; i < current.size(); i++)
+          for (j = 0; j < (*inv[current[i]]).size(); j++)
+            {
+              k = (*inv[current[i]])[j].get_sink().value();
+              if (ilevel[k] == -1)
+                {
+                  next += k;
+                  ilevel[k] = ilevel_count;
+                }
+            }
+
+        current = next;
+        next.clear();
+        ilevel_count++;
+      }
+
+    return ilevel;
+  }

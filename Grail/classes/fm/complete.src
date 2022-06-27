@@ -1,0 +1,119 @@
+//#This comes from 3.1.4-new; modified by ray and sherry in summer 2010
+// Ray & Sherry   2010 summer	    add mapping for non-nanonical numbered fm with continuous states names like 345 137
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent. 
+//	December 1993
+
+/***************************************************************************
+
+  File:  classes/fm/complete.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::complete()
+
+    This function is a public member of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    The Grail Project               Initial version of source code
+    M.Hoeberechts  98/09/06         Added header and comments
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+                      void fm<Label>::complete()
+
+  Description:
+    This function is a public member of the template class fm (declared 
+    in classes/re/fm.h).  This function completes this fm.  After execution,
+    there will be arc for each letter in the input alphabet originating from
+    each state.  A sink state is added to the machine.
+
+    This function can be called in the following way:
+      this_fm.complete();
+
+  Parameters:  none
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::complete()
+{
+	// This function will check whether or not the automata is complete 
+	// while it attempts to complete it.  If no transition is missing,
+	// a sink state will not be added.
+	// This function assumes the automata is deterministic, and uses this
+	// property to speed up computation.
+	
+	set_map();	
+
+	bool complete = true;
+
+	unattach();
+
+	set<Label> alpha;
+	labels(alpha);
+	int alphabet_size = alpha.size();
+
+	inst<Label> new_inst;
+
+	attach();
+
+	int i, j; // General purpose counters
+
+	
+
+	i = 0;
+	while((i < all_states.size()) && ((*all_states[i]).size() == alphabet_size))
+		i++;
+
+	if (i < all_states.size()) // We need to add a sink state
+	{
+		all_states += new atstate<Label>();
+		for (j = 0; j < alphabet_size; j++)
+		{
+			new_inst.assign(map[all_states.size()-2]+1, alpha[j], map[all_states.size()-2]+1);
+			(*all_states[all_states.size()-1]) += new_inst;
+		}
+
+	}
+
+	bool *label_present = new bool[alphabet_size];
+	while(i < all_states.size())
+	{
+		if ((*all_states[i]).size() == alphabet_size)
+		{
+			i++;
+			continue;
+		}
+
+		for (j = 0; j < alphabet_size; j++)
+			label_present[j] = false;
+
+		for (j = 0; j < (*all_states[i]).size(); j++)
+			label_present[alpha.member((*all_states[i])[j].get_label())] = true;
+
+		for (j = 0; j < alphabet_size; j++)
+			if (label_present[j] == false)
+			{
+				new_inst.assign(map[i], alpha[j],map[all_states.size()-2]+1);
+				(*all_states[i]) += new_inst;
+			}
+
+		i++;
+	}
+	delete label_present;
+			
+	unattach();
+}

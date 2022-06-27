@@ -1,0 +1,17 @@
+//#This comes from 3.1.4-new
+//	This code copyright (c) by the Grail project. 
+//	No commercial use permitted without written consent.  
+//	February 1995 
+ 
+template <class Input,class Iput, class Output>
+int 
+tuple<Input,Iput, Output>::operator==(const tuple<Input,Iput, Output>& p) const
+{ 
+	if (left != p.left) 
+		return 0;
+    if (mid != p.mid)
+        return 0;
+	if (right != p.right) 
+		return 0; 
+	return 1; 
+} 

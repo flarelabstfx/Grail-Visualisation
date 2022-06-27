@@ -1,0 +1,11 @@
+#!/bin/bash
+wd=`pwd`
+#cd /usr/local/bin
+#Totempfile=$(mktemp /tmp/output.XXXXXXXXXX) || { echo "Failed to create temp file"; exit 1; }
+#cat $wd/$1| sed '/^$/d' >$Totempfile
+#java drawfm $Totempfile
+#rm $Totempfile
+# to do: develop as a full Graphical User Interface, July 2015, CC
+java drawfm $wd/$1
+cd $wd
+

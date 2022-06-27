@@ -1,0 +1,549 @@
+//#This comes from Grail-3.3.5 // added set_mapping in 2010 summer
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent. 
+//	November 1994
+
+/***************************************************************************
+
+  File:  classes/fm/minbyp.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      fm<Label>& fm<Label>::min_by_partition()
+
+    min_by_partition is a public member of the template class fm;
+    merge_inverse and find_part are protected members (fm is declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    The Grail Project               Initial version of source code
+    M.Hoeberechts  98/09/10         Added header and comments
+	 Jason Smith	7/17/05				Rewrite of the algorithm
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+             fm<Label>& fm<Label>::min_by_partition()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/fm/fm.h).  Minimizes the fm using Hopcroft's partition 
+    algorithm.  The function returns a reference to this fm.
+
+	 The code for this algorithm was adapted from the code in 
+	 classes/fcm/fmtofcm2.src since Korner's algorithm was an adaptation of
+	 Hopcrofts.
+
+    This function can be called in the following way:
+      this_fm.min_by_partition();
+
+  Parameters:  none
+
+  Return Value:
+    fm<Label>& - a reference to this fm
+  
+ ***************************************************************************/
+
+#ifndef _DNODE
+struct DNode{ // Double linked node for the list structure
+	DNode *next;
+	DNode *prev;
+	int state;
+};
+#define _DNODE
+#endif
+
+template <class Label>
+fm<Label>&
+fm<Label>::min_by_partition()
+{
+	canonical_numbering();
+
+	set<Label> alpha;
+	labels(alpha);
+	complete();
+	set_map();
+	attach();
+	array<atstate<Label> * > inv = attach_inv();
+
+	int i, j, y, a, q, p, s; // General purpose variables
+
+	int n = all_states.size();
+	
+	// c[i] holds the number of states in partition i
+	array<int> c;
+	c += 0;
+	c += 0;
+
+	DNode *tempd;
+	DNode *current;
+
+	array<DNode * > Q; // Points to the head of the list
+	// Add the two partitions (to be filled later)
+	Q += NULL;
+	Q += NULL;
+
+	// link[i] contains the location in the linked list which contains i
+	array<DNode * > link;
+	
+	// Initialize the SSD into two partitions
+
+	for (i = 0; i < n; i++)
+	{
+		if ((*all_states[i]).final() == false)
+		{
+			if (Q[0] == NULL)
+			{
+				Q[0] = new DNode;
+				Q[0]->prev = NULL;
+				Q[0]->next = NULL;
+				Q[0]->state = i;
+				link += Q[0];
+			}
+			else
+			{
+				tempd = new DNode;
+				tempd->prev = NULL;
+				tempd->next = Q[0];
+				tempd->state = i;
+				Q[0]->prev = tempd;
+				Q[0] = tempd;
+				link += Q[0];
+			}
+			c[0]++;
+
+		}
+		else
+		{
+			if (Q[1] == NULL)
+			{
+				Q[1] = new DNode;
+				Q[1]->prev = NULL;
+				Q[1]->next = NULL;
+				Q[1]->state = i;
+				link += Q[1];
+			}
+			else
+			{
+				tempd = new DNode;
+				tempd->prev = NULL;
+				tempd->next = Q[1];
+				tempd->state = i;
+				Q[1]->prev = tempd;
+				Q[1] = tempd;
+				link += Q[1];
+			}
+			c[1]++;
+
+		}
+	}
+
+
+	struct node{ // Individual node for the queue T
+		int S;
+		node *next;
+	};
+		
+	node *T_head;
+	T_head = new node;
+	T_head->S = 0;
+	T_head->next = NULL;
+	node *T_current = T_head;
+	node *tempn = NULL;
+	
+	// This block of code functions as an enqueue for T
+	
+	tempn = new node;
+	tempn->S = 1;
+	tempn->next = NULL;
+	if (T_current == NULL)   //??? Unecessary
+		T_head = tempn;
+	else
+		T_current->next = tempn;
+	T_current = tempn;
+	
+	// End enqueue
+
+	DNode *S = NULL;
+	
+	// Initialize the auxilliary arrays to Q
+
+	// Count contains the number of states in partition Q[i] that will be moved
+	array<int> count; 
+	for (i = 0; i < 2; i++)
+		count += 0;
+
+	// getindex[i] holds the location in Q where the state i is located
+	
+	array<int> getindex;
+	for (i = 0; i < n; i++)
+	{
+		if ((*all_states[i]).final())
+			getindex += 1;
+		else
+			getindex += 0;
+	}
+
+	// newindex[i] holds the state set that i's states will move to
+
+	array<int> newindex;
+	newindex += -1;
+	newindex += -1;
+
+	// children keeps track of state sets that are split.  This is needed to
+	// ensure that S is properly extracted from T.
+
+	array<array<int> > children;
+	array<int> tempc;
+	tempc.clear();
+
+	children += tempc;	
+	children += tempc;	
+
+	array<int> cqueue; // Contains all the children of a state set
+	int current_c;
+	int last_c;
+
+	while(T_head != NULL)
+	{
+		// This block of code functions as a dequeue for T
+		cqueue.clear();
+		
+		cqueue += T_head->S;
+		current_c = 1;
+		last_c = 1;
+		cqueue += children[T_head->S];
+		while (last_c < cqueue.size())
+		{
+			last_c = cqueue.size();
+			for (i = current_c; i < last_c; i++)
+			{
+				cqueue += children[cqueue[i]];
+			}
+			current_c = last_c;
+
+		}
+
+		last_c = 0;
+		for (i = 0; i < cqueue.size(); i++)
+		{
+			current = Q[cqueue[i]];
+			while (current != NULL)
+			{
+				if (S == NULL)
+				{
+					S = new DNode;
+					S->state = current->state;
+					S->prev = NULL;
+					S->next = NULL;
+				}
+				else
+				{
+					tempd = new DNode;
+					tempd->state = current->state;
+					tempd->next = S;
+					tempd->prev = NULL;
+					S->prev = tempd;
+					S = tempd;
+				}
+				last_c++;
+
+				current = current->next;
+			}
+		}
+		
+		tempn = T_head;
+		T_head = T_head->next;
+		delete tempn;
+		if (T_head == NULL)
+			T_current = NULL;
+		// End dequeue
+
+		for (a = 0; a < alpha.size(); a++)
+		{
+			// First Step
+			current = S;
+			
+			while(current != NULL)
+			{
+				for (j = 0; j < (*inv[current->state]).size(); j++)
+					if ((*inv[current->state])[j].get_label() == alpha[a])
+					{
+						p = (*inv[current->state])[j].get_sink().value();
+						count[getindex[p]]++;
+					}
+
+				current = current->next;
+			}
+
+			// Second Step
+			current = S;
+			while (current != NULL)
+			{
+				for (j = 0; j < (*inv[current->state]).size(); j++)
+					if ((*inv[current->state])[j].get_label() == alpha[a])
+					{
+						p = (*inv[current->state])[j].get_sink().value();
+
+						if ( (count[getindex[p]] > 0) && 
+							(c[getindex[p]] - count[getindex[p]] > 0) )
+						{
+							s = newindex[getindex[p]];
+							if (s == -1)
+							{
+								newindex[getindex[p]] = Q.size();
+								s = Q.size();
+								Q += NULL;
+								count += 0;
+								c += 0;
+								newindex += -1;
+								children += tempc;
+
+								if (getindex[p] > 1)
+									children[getindex[p]] += s;
+
+								if (link[p]->next != NULL)
+									link[p]->next->prev = link[p]->prev;
+
+								if (link[p]->prev != NULL)
+									link[p]->prev->next = link[p]->next;
+								else // link[p] is the head of Q[getindex[p]]
+									Q[getindex[p]] = link[p]->next;
+
+								Q[s] = link[p];
+								link[p]->next = NULL;
+								link[p]->prev = NULL;
+								
+							}
+							else
+							{
+								if (link[p]->next != NULL)
+									link[p]->next->prev = link[p]->prev;
+
+								if (link[p]->prev != NULL)
+									link[p]->prev->next = link[p]->next;
+								else // link[p] is the head of Q[getindex[p]]
+									Q[getindex[p]] = link[p]->next;
+
+								link[p]->next = Q[s];
+								Q[s]->prev = link[p];
+								link[p]->prev = NULL;
+								Q[s] = link[p];
+
+							}
+														
+						}
+					}
+
+				current = current->next;
+			}
+
+
+			// Third step
+			current = S;
+			while (current != NULL)
+			{
+				for (j = 0; j < (*inv[current->state]).size(); j++)
+					if ((*inv[current->state])[j].get_label() == alpha[a])
+					{
+						p = getindex[(*inv[current->state])[j].get_sink().value()];
+						s = newindex[p];
+						if (s != -1)
+						{
+							newindex[p] = -1;
+							c[s] = count[p];
+							c[p] -= count[p];
+						
+							if (c[p] < c[s])
+							{
+								tempd = Q[p];
+								Q[p] = Q[s];
+								Q[s] = tempd;
+								c[s] = c[p];
+								c[p] = count[p];
+							}
+							
+							tempd = Q[s];
+
+							while (tempd != NULL)
+							{
+								getindex[tempd->state] = s;
+								tempd = tempd->next;
+							}
+
+							// This block of code functions as an enqueue for T
+							tempn = new node;
+							tempn->S = s;
+							tempn->next = NULL;
+							if (T_current == NULL)
+								T_head = tempn;
+							else
+								T_current->next = tempn;
+							T_current = tempn;
+							// End enqueue
+						
+						}
+						
+						count[p] = 0;
+					}
+
+				current = current->next;
+			}
+
+		}
+		
+		// Delete S
+		current = S;
+		while (current != NULL)
+		{
+			tempd = current;
+			current = current->next;
+			delete tempd;
+		}
+		S = NULL;
+			
+	}
+
+	// Begin algorithm for removing similar states.
+	// This is done through the inverse transition function so that
+	// states can be merged faster.
+
+	int minstate;
+     if (Q[0]!=NULL)  //modified by SH 06/18/2007
+     {   
+	for (i = 0; i < Q.size(); i++)
+	{
+		if (Q[i] == NULL)
+			break;
+			
+		minstate = Q[i]->state;
+		
+            // modified by SH 03/16/2007 
+            current = Q[i]->next;
+            while (current != NULL)
+		{
+			if  (current->state < minstate)
+				
+				minstate = current->state;
+
+			if (minstate == 0)
+				minstate = current->state;
+
+			current = current->next;
+		}
+
+
+		current = Q[i];
+		while (current != NULL)
+		{
+			if (minstate != current->state)
+			{
+				a = current->state;
+
+				// for each transition that points to a
+				for (y = 0; y < (*inv[a]).size(); y++)
+					(*inv[a])[y].assign(minstate, (*inv[a])[y].get_label(), 
+						(*inv[a])[y].get_sink());
+					// make that transition point to minstate
+
+				// Since state a no longer exists, it should be set to non-final
+				(*all_states[a]).set_final(false);
+			}
+
+			current = current->next;
+		}
+		
+	}
+     }
+     
+     if (Q[0]==NULL) //modified by SH 06/18/2007
+     {   
+	for (i = Q.size()-1; i >= 0; i--)
+	{
+		if (Q[i] == NULL)
+			break;
+			
+		minstate = Q[i]->state;
+		
+            // modified by SH 03/16/2007 
+            current = Q[i]->next;
+            while (current != NULL)
+		{
+			if  (current->state < minstate)
+				
+				minstate = current->state;
+
+			if (minstate == 0)
+				minstate = current->state;
+
+			current = current->next;
+		}
+
+
+		current = Q[i];
+		while (current != NULL)
+		{
+			if (minstate != current->state)
+			{
+				a = current->state;
+
+				// for each transition that points to a
+				for (y = 0; y < (*inv[a]).size(); y++)
+					(*inv[a])[y].assign(minstate, (*inv[a])[y].get_label(), 
+						(*inv[a])[y].get_sink());
+					// make that transition point to minstate
+
+				// Since state a no longer exists, it should be set to non-final
+				(*all_states[a]).set_final(false);
+			}
+
+			current = current->next;
+		}
+		
+	}
+     } 
+	unattach();
+
+	// This loop reverses the inverse transition function
+	a = 0;
+	inst<Label> temp_inst;
+	for (i = 0; i < inv.size(); i++)
+		for (j = 0; j < (*inv[i]).size(); j++)
+		{
+			temp_inst.assign((*inv[i])[j].get_sink(), 
+				(*inv[i])[j].get_label(), (*inv[i])[j].get_source());
+
+			arcs[a] = temp_inst;
+			a++;
+		}
+
+	// Free memory used in Q
+	for (i = 0; i < Q.size(); i++)
+	{
+		current = Q[i];
+		while(current != NULL)
+		{
+			tempd = current;
+			current = current->next;
+			delete tempd;
+		}
+	}
+
+	reachable_fm();
+
+	canonical_numbering();
+
+	// Deallocate memory used for inv()
+	for(i = 0; i < inv.size(); i++)
+		delete inv[i];
+
+	return *this;
+
+}

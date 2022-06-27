@@ -1,0 +1,77 @@
+// generate random number
+
+int randomNum(int max)
+{
+std::random_device rd;   // non-deterministic generator
+std::mt19937 gen(rd());  // to seed mersenne twister.
+std::uniform_int_distribution<> dist(0,max);
+return dist(gen);
+}
+
+template <class Label>
+int
+fm<Label>::fmrandenum(string<Label>& lang, int length) const
+{
+fm<Label>        tmp;
+array<state>        wave;
+string<Label>   wave_hist;
+array<state>        next_wave;
+string<Label>    next_hist;
+string<Label>         tmp_str;
+fm<Label>        temp;
+set<state>        tmp_states;
+int            i;
+
+
+// reduce to reachable machine
+
+tmp = *this;
+tmp.reachable_fm();
+tmp.reverse();
+tmp.reachable_fm();
+tmp.reverse();
+
+// initialize...
+lang.clear();
+
+// initialize wave, and wave_hist
+
+wave += tmp.start_states;
+wave_hist += string<Label>();
+
+int langLength = 0;
+
+while (langLength < length)
+{
+// advance wave
+next_wave.clear();
+next_hist.clear();
+
+int i = randomNum(wave.size() - 1);
+
+tmp.select(wave[i], SOURCE, temp);
+
+int j = randomNum(temp.size() - 1);
+
+next_wave += temp[j].get_sink();
+tmp_str = wave_hist;
+tmp_str += temp[j].get_label();
+next_hist += tmp_str;
+
+
+wave = next_wave;
+
+wave_hist = next_hist;
+
+
+++langLength;
+
+}
+
+lang += tmp_str;
+
+return 1;
+}
+
+
+

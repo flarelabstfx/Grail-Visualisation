@@ -1,0 +1,62 @@
+//#This is new code 3.4.3
+//	This code is LGPL.
+//	 
+//	April 2014 
+
+
+/***************************************************************************
+
+  File:  classes/fm/prefix.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::prefix()
+
+    This function is a public member of the template class fm (declared 
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Cezar Campeanu           Initial version of source code
+    
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+               void fm<Label>::prefix()
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/re/fm.h).  This function computes the prefix of the fm.  
+    As a result, each word in the language represented by the fm will be 
+    a prefix of  a word.  Prefix is
+    accomplished by adding all usefull states as final states.
+    
+
+    This function can be called in the following way:
+      this_fm.prefix();
+
+  Parameters:  none
+
+  Return Value:  none
+  
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::prefix()
+{
+        fm<Label>		result;
+        result=*this;
+        result.useful_fm();
+	//attach();
+        set<state> newfinal;
+        newfinal=result.states(newfinal);
+	result.set_finals(newfinal);
+	*this=result;
+}

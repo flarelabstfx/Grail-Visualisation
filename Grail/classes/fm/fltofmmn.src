@@ -1,0 +1,129 @@
+//#This comes from 3.1.4-new
+// This is an implementation of the algorithm given in
+// "Incremental Construction of Minimal Acyclic
+// Finite-State Automata" for sorted data
+
+template <class Label>
+void
+fm<Label>::fltofm_min(const fl<Label>& lang)
+{
+	clear();
+	attach();
+	
+	int i, j, k, l, x, y, z;
+	
+	set<string<Label> > words;
+	string<Label> current_word;
+	lang.get_words(words);
+	int wc;
+	int current_letter;
+
+	inst<Label> temp_inst;
+
+	int start, current, prev, last_state;
+
+	bool found;
+
+	if (words.size() == 0)
+		return;
+
+	words.sort();
+	
+	// Create a start state with no transitions
+	start = 0;
+	all_states += new atstate<Label>();
+	all_states[0]->set_final(false);
+	reg += false;
+
+	for (wc = 0; wc < words.size(); wc++)
+	{
+		// This loop eliminates duplicate words
+		if (wc != 0)
+			while ((wc < words.size()) && (current_word == words[wc]))
+				wc++;
+
+		if (wc >= words.size())
+			break;
+			
+		current_word = words[wc];
+		current = start;
+		prev = -1;
+		current_letter = 0;
+		found = true;
+
+		// First, find the longest common prefix of the new word
+		// All states in the common prefix (besides last_state) are
+		// added to the register
+		while (found && (current_letter < current_word.size()) )
+			// While a transition for the current word is found
+		{
+			found = false;
+			i = (*all_states[current]).size()-1;
+			if (i >= 0)
+			{
+				if ((*all_states[current])[i].get_label() == current_word[current_letter])
+				{
+					prev = current;
+					found = true;
+					current = (*all_states[current])[i].get_sink().value();
+					
+				}
+
+			}
+			if (found)
+				current_letter++;
+
+		}
+
+		last_state = current;
+		// If the last state has children
+		if ((!found) && ((*all_states[last_state]).size() > 0))
+		{
+			replace_or_register(last_state);
+		}
+
+
+		// The next section acts as the add_suffix function
+
+		// Add the transition to the current state leading to the rest of the
+		// new word's states
+		temp_inst.assign(last_state, 
+			current_word[current_letter], all_states.size());
+
+		(*all_states[last_state]) += temp_inst;
+
+		current_letter++;
+
+		// Add the new word's states
+		while(current_letter < current_word.size())
+		{
+			current = all_states.size();
+			all_states += new atstate<Label>();
+			all_states[current]->set_final(false);
+			temp_inst.assign(current, current_word[current_letter], all_states.size());
+			(*all_states[current]) += temp_inst;
+			reg += false;
+
+			current_letter++;
+		}
+		// Add the final state
+		current = all_states.size();
+		all_states += new atstate<Label>();
+		all_states[current]->set_final(true);
+		reg += false;
+
+		if (wc == words.size()-1) // If there are no words left
+		{
+			replace_or_register(start);
+		}
+
+	}
+
+	// Return the fm to Grail's format
+
+	start_states += start;
+
+	unattach();
+	reachable_fm();
+	canonical_numbering();
+}

@@ -1,0 +1,56 @@
+//Ray 2011
+//generate the adjecency matrix
+//#include <vector>
+//using namespace std;
+template <class Label>
+void
+fm<Label>::ad_matrix()
+{
+	//get the number of states
+	int n = number_of_states();
+	int s=n*n+n;
+
+	std::vector<std::string> matrix(s);
+
+	for (int i=0;i<s;i++)
+		matrix[i]="0";
+
+	//make the adjacency table
+	for (int i=0;i<arcs.size();i++)
+	{
+	int source=arcs[i].get_source().value();
+	int sink=arcs[i].get_sink().value();
+	if (matrix[source*n+sink].compare("0")==0)
+		matrix[source*n+sink]= (arcs[i].get_label()) ;
+	else
+		matrix[source*n+sink].append( & (arcs[i].get_label()) );
+
+	}
+
+	// note the finals
+	for (int a=0;a<final_states.size();a++)
+{
+int t=final_states[a].value();
+matrix[n*n+t]="1";
+
+
+
+
+}
+
+
+
+
+//output the result
+
+for (int i=0;i<s;i++)
+{
+if (i%n==0)
+	std::cout <<std::endl;
+std::cout<<matrix[i]<<" ";
+
+
+}
+std::cout<<std::endl;
+
+}

@@ -1,0 +1,122 @@
+//#added in 2010 summber by ray
+
+/***************************************************************************
+
+  File:  classes/fm/ntatodfca_forTest.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      void fm<Label>::ntatodfca(fcm<Label>&)
+
+    This function is a public member of the template class fm (declared
+    in classes/fm/fm.h).
+
+  Revision History:
+  -----------------
+    Ray Rui Zhou   2010 summer    initial version
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+                    void fm<Label>::ntatodfca(fcm<Label>&)
+
+  Description:
+    This function is a public member of the template class fm (declared in
+    classes/re/fm.h). This transfers a nfa to a dfa.
+
+    This function can be called in the following way:
+      this_fm.ntatodfca(fcm<Label>&);
+
+  Parameters:  none
+
+  Return Value:  none
+
+ ***************************************************************************/
+
+template <class Label>
+void
+fm<Label>::nfatodfca(fcm<Label>& dfca)
+{
+if (debug>0)
+	{
+	std::cout<<"In nfatodfca, the input nfa is "<<*this<<std::endl;
+
+	array<int> level=find_levels();
+
+	set<state> sts;
+	states(sts);
+
+	std::cout<<"In nfatodfca, the input nfa levels: "<<std::endl;
+
+	for (int a=0;a<level.size();a++)
+		std::cout<<"state "<<sts[a].value()<<" has level "<<level[a]<<std::endl;
+
+	}
+
+fm<Label> temp;
+nfatodfa(temp);
+
+
+if (debug>0)
+	{
+	std::cout<<"In nfatodfca, the internal dfa is "<<temp<<std::endl;
+
+	array<int> level=temp.find_levels();
+
+	set<state> sts;
+	temp.states(sts);
+
+	std::cout<<"In nfatodfca, the internal dfa levels: "<<std::endl;
+
+	for (int a=0;a<level.size();a++)
+		std::cout<<"state "<<sts[a].value()<<" has level "<<level[a]<<std::endl;
+	}
+
+
+
+if (!temp.is_finite())
+		{
+			std::cout << "Language of dfa is not finite\n";
+			return ;
+		}
+
+dfca.convert_to_fcm(temp);
+//temp.fmtofcm(dfca);
+if (debug>0)
+	{
+	array<int> level=dfca.find_levels();
+
+	//set<state> sts;
+	//dfca.fm<Label>::states(sts);
+
+	std::cout<<std::endl<<"In nfatodfca, the result dfca levels: "<<std::endl;
+
+	for (int a=0;a<level.size();a++)
+		std::cout<<"state "<<a<<" has level "<<level[a]<<std::endl;
+
+	}
+if (debug==-1)
+	{
+	array<int> level=dfca.find_levels();
+
+	//set<state> sts;
+	//dfca.fm<Label>::states(sts);
+
+	std::cout<<std::endl<<"In nfatodfca, the result dfca levels written to file  "<<std::endl;
+	std::ofstream myfile;
+	char* tempname;tempname=(char *) malloc(strlen(nfatodfca_name) + 25); strcpy(tempname,nfatodfca_name);
+ 	 myfile.open (strcat(tempname,"_Nfatodfca_Lev_Info"));
+	for (int a=0;a<level.size();a++)
+		myfile<<a<<" "<<level[a]<<std::endl;
+	myfile.close();
+
+	}
+dfca.unattach();
+
+}

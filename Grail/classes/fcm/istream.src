@@ -1,0 +1,71 @@
+//#This comes from Grail-3.3.5
+//	This code copyright (c) by the Grail project.
+//	No commercial use permitted without written consent.
+//	May 1993
+
+// Modified for fcm class October 2004
+
+template <class Label>
+class fcm;
+
+template <class Label>
+std::istream&
+operator>>(std::istream& is, fcm<Label>& a)
+{
+	inst<Label>		t;
+	list<inst<Label> >	l;
+	int max = 0;
+	char *tempLine = new char[4096];
+	char temp='\0';
+
+	a.clear();
+
+	while (is.peek() == '#')
+		is.getline(tempLine, 4095);
+
+	if (((char) is.get() == 'l')
+		&& ((char) is.get() == '='))
+	{
+		temp = (char) is.get();
+
+		while (temp != '\n')
+		{
+			max *= 10;
+			max += (temp-'0');
+			temp = (char) is.get();
+		}
+
+	}
+	else  //Added by Brodie and Marcus Aug. 7, 2007
+	{
+		std::cerr << "length not specified in file!" << std::endl;
+		exit(1);
+	}
+
+	a.set_max(max);
+
+	while (is.peek() == '#')
+		is.getline(tempLine, 4095);
+	for (is >> t; !t.is_null(); is >> t)
+	{
+		if (t.is_start())
+			a.start_states += t.get_sink();
+		else
+		if (t.is_final())
+			a.final_states += t.get_source();
+		else
+			l += t;
+		while (is.peek() == '#')
+			is.getline(tempLine, 4095);
+	}
+
+	a.arcs.from_list(l);
+if (debug>8)
+	{
+	//Print out all of the states
+	std::cout << "start states size = " << a.start_states.size() << std::endl;
+	std::cout << "start states: " << a.start_states << std::endl;
+	}
+
+	return is;
+}

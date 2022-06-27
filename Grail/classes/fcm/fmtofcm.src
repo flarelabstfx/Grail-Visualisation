@@ -1,0 +1,191 @@
+//#This comes from 3.1.4-new
+// This is an implementation of the algorithm described in
+// the paper "An Efficient Algorithm for Constructing Minimal
+// Cover Automata for Finite Languages", in IJFCS 13, 1 (2002).
+
+// The fm to be converted must be ordered and minimal
+
+template<class Label>
+class fm;
+
+template<class Label>
+fcm<Label>&
+fcm<Label>::convert_to_fcm(const fm<Label>& x)
+{
+	copyfm(x);
+	fm<Label>::order();
+	fm<Label>::complete();
+	fm<Label>::arcs.sort();
+
+   int i, j, a; // General purpose counters
+
+	attach();
+	array<atstate<Label> * > inv = attach_inv();
+
+   int n = all_states.size();
+
+   maxlen = find_max();
+	int l = maxlen;
+
+   array<int> level;
+
+   // Initialize the gap structure
+
+   array<array<int> > gap;
+   array<int> temp;
+   for (i = 0; i < n; i++)
+      temp += 0;
+
+   for (i = 0; i < n; i++)
+      gap += temp;
+
+
+   // Begin algorithm for computing the gap function
+
+	// Step 1 - Find the level of each state
+	level = find_levels();
+
+   // Step 2 - Initialize the gap function
+
+	for (i = 0; i < n - 1; i++)
+		gap[i][n-1] = l;
+	if (level[n-1] != -1) // A state is unreachable (level -1) if its
+								 // level is greater than or equal to l
+		for (i = 0; i < n - 1; i++)
+			if ((*all_states[i]).final() == true)
+				gap[i][n-1] = 0;
+
+	// Step 3 - Initialize the gap function
+
+   for (j = 0; j < n-1; j++)
+      for (i = 0; i < j; i++)
+		{
+         if ((*all_states[i]).final() != (*all_states[j]).final())
+            gap[i][j] = 0;
+         else
+            gap[i][j] = l;
+		}
+
+
+   int iPrime, jPrime, g; // For use in Step 4
+
+	// Step 4 - Compute the gap function
+
+	for (i = n - 3; i >= 0; i--)
+		for (j = n - 1; j >= i + 1; j--)
+			for (a = 0; a < (*all_states[i]).size(); a++) // The labels must match up since
+																		 // the automata is complete
+			{
+				iPrime = (*all_states[i])[a].get_sink().value();
+				jPrime = (*all_states[j])[a].get_sink().value();
+
+				if (iPrime != jPrime)
+				{
+					if (iPrime < jPrime)
+						g = gap[iPrime][jPrime];
+					else
+						g = gap[jPrime][iPrime];
+
+					if ( (g + 1) <= (l - (level[i] > level[j] ? level[i] : level[j]) ) )
+						gap[i][j] = ((gap[i][j] > g+1) ? g+1 : gap[i][j]);
+				}
+			}
+
+
+   // Begin algorithm for merging similar states
+
+   array<bool> P;
+	array<array<int> > mginfo;
+	array<int> counted;
+//2010 summer by ray, for the special tests of nfatodfca
+if(debug==-1)
+	{
+
+	for (int a=0;a<inv.size();a++)
+		{
+		array<int> temp;
+		temp+=a;
+		temp+=a;
+		mginfo+=temp;
+		}
+	}
+   for (i = 0; i < n; i++)    // Step 1
+      P += false;
+
+   for (i = 0; i < n - 1; i++) // Step 2
+      if (P[i] == false)
+         for (j = i + 1; j < n; j++)
+            if ( (P[j] == false) && (gap[i][j] == l) )
+            {
+					// Merge j to i
+
+					// for each transition that points to j
+					for (a = 0; a < (*inv[j]).size(); a++)
+						(*inv[j])[a].assign(i, (*inv[j])[a].get_label(),
+							(*inv[j])[a].get_sink());
+						// make that transition point to i
+
+               P[j] = true;
+
+					// Since state j no longer exists, it should be set to non-final
+					(*all_states[j]).set_final(false);
+
+//2010 summer by ray, for the special tests of nfatodfca
+if(debug==-1)
+	{mginfo[i]+=j; counted+=j;}
+
+            }
+//2010 summer by ray, for the special tests of nfatodfca
+//delete merged
+if(debug==-1)
+{
+array<array<int> > del;
+for (int a=0;a<counted.size();a++)
+	del+=mginfo[counted[a]];
+mginfo-=del;
+
+	// write in file
+	std::ofstream myfile;
+	char* tempname;tempname=(char*) malloc(strlen(nfatodfca_name) + 30); strcpy(tempname,nfatodfca_name);
+  	myfile.open (strcat(tempname,"_Nfatodfca_Set_Info"),std::ios::app);
+  	myfile << "SETINFO_BEGIN:dc\n";
+	for (int a=0;a<mginfo.size();a++)
+		{
+		for (int b=0;b<mginfo[a].size();b++)
+		myfile<<mginfo[a][b]<<" ";
+		myfile<<std::endl;
+		}
+	myfile << "SETINFO_END\n";
+ 	myfile.close();
+
+	delete [] tempname;
+
+}
+	// Return the fcm to Grails format
+	unattach();
+
+	fm<Label>::arcs.clear();
+
+	// This loop reverses the inverse transition function
+	inst<Label> temp_inst;
+	for (i = 0; i < inv.size(); i++)
+		for (j = 0; j < (*inv[i]).size(); j++)
+		{
+			temp_inst.assign((*inv[i])[j].get_sink(),
+				(*inv[i])[j].get_label(), (*inv[i])[j].get_source());
+
+			fm<Label>::arcs.disjoint_union(temp_inst);
+		}
+
+	fm<Label>::reachable_fm(); // Step 3
+
+	fm<Label>::canonical_numbering();
+
+	// Deallocate memory used for inv()
+	for(i = 0; i < inv.size(); i++)
+		delete inv[i];
+
+
+   return *this;
+
+}

@@ -1,0 +1,234 @@
+############################# This is the original Makefiles for grail ###############################
+
+#	This code copyright (c) by the Grail project.
+#	No commercial use without written consent.
+#	January 1995
+
+
+
+#	set SYS to:
+#		XLC	- if you're using IBM's xlC under AIX
+#		DEC	- if you're using USL's Cfront on DEC Ultrix
+#		SUN	- if you're using USL's Cfront under Sun OS
+#		WAT	- if you're using Watcom under DOS
+#		SGI	- if you're using Delta/C++ compiler under IRIX
+#SYS=WAT
+#SYS=XLC
+#SYS=DEC
+#SYS=SUN
+#SYS=SGI
+SYS=linux
+#SYS=BORLAND
+#SYS=VC60
+
+#	CC is set to your compiler's path
+#
+DECCC=CC
+SUNCC=CC
+#SUNCC=CC
+XLCCC=xlC
+WATCC=wcl386
+#	we've tested DCC, but it wasn't available to us to
+#	produce our SGI binaries; we used cfront on SGI
+#SGICC=DCC
+SGICC=CC
+linuxCC=g++
+BORLANDCC=cpp
+VC60CC=cl
+
+#	FL (flags) are set (note shared and non-shared versions)
+#
+#	+i option keeps cpp from dumping core on
+#	the cfront generated file??!
+#
+DECFL = -O -Olimit 1024 -DATT -o grail.out
+#SUNFL = +i -O2 -DATT -o grail.out
+SUNFL = +i -temp=/grail/drraymon -O2 -DATT -o grail.out
+#SUNFL = +i -temp=/grail/drraymon -g -DATT -o grail.out
+#XLCFL = -DXLC -g -o grail.out
+XLCFL = -DXLC -O2 -o grail.out
+#linuxFL = -O2 -o grail.out
+#linuxFL = -Wno-deprecated -O2 -o grail.out //original one
+linuxFL = -Wno-deprecated -ggdb -02 -o grail.out
+BORLANDFL = -o grail.out
+VC60FL = -o grail.exe /O2 /G7
+
+#
+#	if you're using Watcom 9.5, avoid the -oneatx optimizations;
+#	they result in linker problems
+#
+WATFL =  -bt=dos -cc++ -zq -zp4 -5r -DWATCOM
+#WATFL =  -bt=dos -cc++ -oneatx -zq -zp4 -5r -DWATCOM
+#
+#
+#SGIFL = -non_shared -O2 -Olimit 15000 -o grail.out
+SGIFL = -O2 -Olimit 15000 -o grail.out
+
+all:
+#
+#	You may have to remove this line on stupid SGI machines
+#	that barf if they rm nothing
+#
+	@$(MAKE) clean_$(SYS) "MAKE=$(MAKE)"
+#
+#	uncomment re lines if you want those alphabets
+#	compiled and installed
+#
+	@$(MAKE) compile_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=re "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlychar "MAKE=$(MAKE)"
+#	@$(MAKE) compile_$(SYS) TYPE=mlyint "MAKE=$(MAKE)"
+	@$(MAKE) install_$(SYS) TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install_$(SYS) TYPE=re
+#	@$(MAKE) install_$(SYS) TYPE=mlychar
+#	@$(MAKE) install_$(SYS) TYPE=mlyint
+	@echo "Everything made"
+
+
+486:
+#	@$(MAKE) install_WAT  TYPE=char "MAKE=$(MAKE)"
+#	@$(MAKE) install_WAT  TYPE=mlychar
+#	@$(MAKE) install_WAT  TYPE=int
+#	@$(MAKE) install_WAT  TYPE=mlyint
+	@echo "Everything made"
+
+dec:
+#	@$(MAKE) install_DEC TYPE=char
+#	@$(MAKE) install_DEC TYPE=mlychar
+#	@$(MAKE) install_DEC TYPE=mlyint
+#	@$(MAKE) install_DEC TYPE=re
+	@echo "Everything made"
+
+sparc:
+#	@$(MAKE) install_SUN TYPE=char
+#	@$(MAKE) install_SUN TYPE=re
+#	@$(MAKE) install_SUN TYPE=mlychar
+#	@$(MAKE) install_SUN TYPE=mlyint
+	@echo "Everything made"
+
+rs6000:
+#	@$(MAKE) install_XLC TYPE=char
+#	@$(MAKE) install_XLC TYPE=re
+#	@$(MAKE) install_XLC TYPE=mlychar
+#	@$(MAKE) install_XLC TYPE=mlyint
+	@echo "Everything made"
+
+sgi:
+#	@$(MAKE) install_SGI TYPE=char
+#	@$(MAKE) install_SGI TYPE=re
+#	@$(MAKE) install_SGI TYPE=mlychar
+#	@$(MAKE) install_SGI TYPE=mlyint
+	@echo "Everything made"
+
+linux:
+
+#	@$(MAKE) install_linux TYPE=char
+#	@$(MAKE) install_linux TYPE=re
+#	@$(MAKE) install_linux TYPE=mlychar
+#	@$(MAKE) install_linux TYPE=mlyint
+#	@echo "Everything made"
+
+compile_DEC:
+	@cd $(TYPE); $(MAKE) CC='$(DECCC)' CCFLAGS='$(DECFL)' BIN=../binaries/dec/
+
+compile_SUN:
+	@cd $(TYPE); $(MAKE) CC='$(SUNCC)' CCFLAGS='$(SUNFL)' BIN=../binaries/sparc/
+
+compile_XLC:
+	@cd $(TYPE); $(MAKE) CC='$(XLCCC)' CCFLAGS='$(XLCFL)' BIN=../binaries/rs6000/
+
+compile_SGI:
+	@cd $(TYPE); $(MAKE) CC='$(SGICC)' CCFLAGS='$(SGIFL)' BIN=../binaries/sgi/
+
+compile_BORLAND:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(BORLANDCC) "CCFLAGS=$(BORLANDFL)" BIN=..\binaries\486\ 
+	@cd ..
+	
+compile_WAT:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(WATCC) "CCFLAGS=$(WATFL)" BIN=..\binaries\486\ 
+	@cd ..
+	
+compile_VC60:
+	@cd $(TYPE)
+	@$(MAKE) make_dos CC=$(VC60CC) "CCFLAGS=$(VC60FL)" BIN=..\binaries\486\ 
+	@cd ..
+
+compile_linux:
+	@cd $(TYPE); $(MAKE) CC='$(linuxCC)' CCFLAGS='$(linuxFL)' BIN=../binaries/linux/
+#	@./pmd
+	cd ..
+
+install_BORLAND:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+	@cd ..
+
+
+install_WAT:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+	@cd ..
+
+install_VC60:
+	@cd $(TYPE)
+	@$(MAKE) install CP=copy BIN=..\binaries\486\ I_BIN=..\bin\ EXT=.exe
+	@cd ..
+	
+install_DEC:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/dec/ I_BIN=../bin/
+
+install_SUN:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/sparc/ I_BIN=../bin/
+
+install_XLC:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/rs6000/ I_BIN=../bin/
+
+install_SGI:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/sgi/ I_BIN=../bin/
+
+install_linux:
+	@cd $(TYPE); $(MAKE) install CP="ln -s" BIN=../binaries/linux/ I_BIN=../bin/
+
+checkout:
+	@$(MAKE) checkout_$(SYS)
+
+checkout_WAT:
+	@cd tests
+	@check_dos
+	@cd ..
+	@echo Testing complete.
+
+checkout_XLC checkout_SGI checkout_DEC checkout_SUN checkout_linux:
+	@cd tests; $(MAKE) checkout 
+	@echo "Testing complete."
+
+clean:
+	@$(MAKE) clean_$(SYS) "MAKE=$(MAKE)"
+
+clean_BORLAND clean_VC60 clean_WAT:
+	@cd char
+	@$(MAKE) clean_DOS
+	@cd ..\re
+	@$(MAKE) clean_DOS 
+	@cd ..\mlychar
+	@$(MAKE) clean_DOS
+	@cd ..\mlyint 
+	@$(MAKE) clean_DOS
+	@cd ..
+	@del /F /Q bin\* mon.out core tests\errors\*
+	@echo Everything clean.
+	
+clean_XLC clean_SGI clean_DEC clean_SUN clean_linux:
+	@cd char; $(MAKE) clean_UNIX
+	@cd re; $(MAKE) clean_UNIX
+	@cd mlychar; $(MAKE) clean_UNIX
+	@cd mlyint; $(MAKE) clean_UNIX
+	@cd tests; $(MAKE) clean
+	@rm -rf bin/* mon.out core tests/errors/* profiles/core
+	@echo "Everything clean."
+
+profile:
+	@cd profiles; $(MAKE)
+	@echo "Profiling complete."

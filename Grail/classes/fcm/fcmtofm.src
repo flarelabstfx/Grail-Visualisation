@@ -1,0 +1,458 @@
+//#This comes from 3.1.4-new
+/***************************************************************************
+
+  File:  classes/fcm/fcmtofm.src
+  -----
+
+  Description:
+  ------------
+    This file contains the definition of the following function:
+      fm<Label> fcm<Label>::fcmtofm(fm<Label> &f)
+
+    This function is a public member of the template class fcm (declared 
+    in classes/fcm/fcm.h).
+
+  Revision History:
+  -----------------
+  		Jason Smith 6/30/2005				Initial verson of source code
+
+ ***************************************************************************/
+
+
+
+
+/***************************************************************************
+
+      		fm<Label> fcm<Label>::fcmtofm(fm<Label> &f)
+
+  Description:
+    This function converts a cover automata (fcm) into a minimal fm.  It
+	 uses fm<Label>::min_by_partition for the minimization.  It takes at most
+	 nl space, where n is the number of states in the original cover automata
+	 and l is the maxmimum length of a word accepted by the cover automata.
+
+    This function can be called in the following way:
+      this_fcm.fcmtofm(new_fm);
+
+  Parameters:
+    fm<Label> &f - stores the newly created fm
+
+  Return Value:
+    fm<Label> - a reference to the new fm
+  
+ ***************************************************************************/
+
+template<class Label>
+fm<Label>& fcm<Label>::fcmtofm(fm<Label> &f)
+{
+	int i, j, k;
+
+	f.clear();
+	
+	if (fm<Label>::start_states.size() == 0)
+		return f;
+
+//	fm<Label>::reachable_fm();
+//	order();
+
+	attach();
+	array<atstate<Label> * > inv = attach_inv();
+	array<int> level = find_levels();
+
+	// Find the inverse level for each state
+	array<int> ilevel;
+
+	array<int> current, next;
+	
+	for (i = 0; i < all_states.size(); i++)
+	{
+		if ((*all_states[i]).final())
+		{
+			current += i;
+			ilevel += 0;
+		}
+		else
+		{
+			ilevel += -1;
+		}
+	}
+	
+	int ilevel_count = 1;
+	while (current.size() > 0)
+	{
+		for (i = 0; i < current.size(); i++)
+			for (j = 0; j < (*inv[current[i]]).size(); j++)
+			{
+				k = (*inv[current[i]])[j].get_sink().value();
+				if (ilevel[k] == -1)
+				{
+					next += k;
+					ilevel[k] = ilevel_count;
+				}
+			}
+
+		current = next;
+		next.clear();
+		ilevel_count++;
+	}
+	// Done finding inverse levels
+
+
+	// Begin Depth First Traversal code
+
+
+	// status contains information for each state used in the 
+	// depth first traversal.
+	// 0: unvisted
+	// 1: currently being visited
+	// 2: previously visited
+	array<int> status;
+
+	// last_transition contains the last transition taken during
+	// the depth first traversal.
+	array<int> last_transition;
+
+	for (i = 0; i < all_states.size(); i++)
+	{
+		status += 0;
+		last_transition += -1;
+	}
+
+	array<int> prev; // stack of previously visited states
+
+	// clones contains the location of the clone of each state at each
+	// level.  -1 means there is no clone present.
+
+	array<array<int> > clones;
+	array<int> dummy;
+
+	for (i = 0; i < all_states.size(); i++)
+	{
+		clones += dummy;
+		for (j = 0; j <= maxlen; j++)
+			clones[i] += -1;
+	}			
+
+	// parent contains the location of a state's parent if it is a clone.
+	// The location of the parent of state i is found with parent[i-old_size],
+	// since only new states have parents.
+	
+	int old_size = all_states.size();
+	array<int> parent;
+
+	// c is the source of the current transition
+	int c = fm<Label>::start_states[0].value();
+	
+	status[c] = 1;
+/*
+	for (i = 0; i < all_states.size(); i++)
+		for (j = 0; j < (*all_states[i]).size(); j++)
+		{
+			if ((level[i] + ilevel[(*all_states[i])[j].get_sink().value()] + 1 > maxlen)
+				|| (ilevel[(*all_states[i])[j].get_sink().value()] == -1))
+			{
+				(*all_states[i]).remove(j);
+				j--;
+			}
+
+		}
+	*/
+	/*
+				// debug output
+				
+				std::cout << "(START) |- " << fm<Label>::start_states[0].value() 
+					<< std::endl;
+					
+				for (i = 0; i < all_states.size(); i++)
+				{
+					for (j = 0; j < (*all_states[i]).size(); j++)
+						std::cout << (*all_states[i])[j] << std::endl;
+
+					if ((*all_states[i]).final())
+						std::cout << i << " -| (FINAL)" << std::endl;		
+				}
+				*/
+
+				// End debug output
+
+	int p, split, split_p, min_ilevel, sink;
+
+	bool done = false;
+	while(!done)
+	{
+		if (last_transition[c] + 1 < (*all_states[c]).size())
+		{
+			last_transition[c]++;
+
+			sink = (*all_states[c])[last_transition[c]].get_sink().value();
+
+			// c is the source of the current transition and sink is the 
+			// sink of the current transition
+			
+			if ((level[c] + ilevel[sink] + 1 > maxlen) || (ilevel[sink] == -1))
+			{
+				// If the transition is unnecessary, delete it.
+				
+				(*all_states[c]).remove(last_transition[c]);
+				last_transition[c]--;
+			}
+			else if (status[sink] == 0)
+			{
+				// If the i has not previously been visited, move to state i
+				
+				prev += c;
+				c = sink;
+				status[c] = 1;
+			}
+			else if (status[sink] == 1)
+			{
+				// If i has previously been visited, a cycle has been detected.
+
+
+				// Find the state in the cycle to clone from. States that have a
+				// transition to a state that already has a clone of the correct 
+				// level should be considered first.  If they do not exist, 
+				// states whose transition points from a high level state to a lower
+				// or equal leveled state should be used.
+				
+				if (c == sink) // if there is one state in the cycle
+				{
+					split = c;
+					split_p = sink;
+
+					if (c >= old_size)
+						k = parent[c-old_size];
+					else
+						k = c;
+						
+					if ((clones[k][level[c]+1] != -1) 
+						&& (clones[k][level[c]+1] != sink))
+					{
+						min_ilevel = -1;
+					}
+					else
+						min_ilevel = ilevel[sink];
+				}
+				else
+				{
+					// check if the cycle should be split from c
+
+					// Find sink's parent if it has one
+					if (sink >= old_size)
+						k = parent[sink-old_size];
+					else
+						k = sink;
+
+					// Check to see if sink is a candidate for cloning
+					if (level[c] >= level[sink])
+					{
+						// Check if sink or sink's parent has a clone of the correct
+						// level
+						if ((clones[k][level[c]+1] != -1) 
+							&& (clones[k][level[c]+1] != sink))
+						{
+							split = c;
+							split_p = sink;
+							min_ilevel = -1;
+						}
+						// Find the inverse level of sink
+						else
+						{
+							min_ilevel = ilevel[sink];
+							split = c;
+							split_p = sink;
+						}
+					}
+					
+					// check the other states in the cycle
+					i = prev.size();
+					p = c;
+					
+					do
+					{
+						i--;
+						
+						if (min_ilevel == -1)
+							break; // the candidate for cloning has been found
+
+						if (p >= old_size)
+							k = parent[p-old_size];
+						else
+							k = p;
+
+						// Check to see if prev[i] is a candidate for cloning
+						if (level[p] >= level[prev[i]])
+						{
+							// Check if sink or sink's parent has a clone of the correct
+							// level
+							if ((clones[k][level[prev[i]]+1] != -1) 
+								&& (clones[k][level[prev[i]]+1] != p))
+							{
+								split = prev[i];
+								split_p = p;
+								min_ilevel = -1;
+							}
+							// Find the inverse level of prev[i]
+							else
+							{
+								if (ilevel[prev[i]] < min_ilevel)
+								{
+									min_ilevel = ilevel[prev[i]];
+									split = prev[i];
+									split_p = p;
+								}
+							}
+						}
+
+						p = prev[i];
+					} while(prev[i] != sink);
+					// Continue this loop until the first state in the cycle was 
+					// checked.
+						
+				}
+				
+				// split now contains the state which will be cloned from
+							
+				sink = split_p;
+
+				if (min_ilevel == -1) // the clone already exists
+				{
+					if (sink >= old_size)
+						sink = parent[sink-old_size];
+
+					k = clones[sink][level[split]+1];
+									
+				}
+				else
+				{
+					all_states += new atstate<Label>();
+//					all_states += NULL;
+//					all_states[all_states.size()-1] = new atstate<Label>();
+					
+					// k is the new clone
+					k = all_states.size() - 1;
+							
+					(*all_states[k]).set_final((*all_states[sink]).final());
+					status += 0;
+					level += level[split] + 1;
+					ilevel += ilevel[sink];
+					last_transition += -1;
+					
+					i = 0;
+					for (j = 0; j < (*all_states[sink]).size(); j++)
+					{
+						if (level[k] + ilevel[(*all_states[sink])[j].get_sink().value()] 
+							+ 1 <= maxlen)
+						{ // check if each transition is unnecessary before making it
+							(*all_states[k]) += (*all_states[sink])[j];
+							(*all_states[k])[i].assign(k,	
+								(*all_states[k])[i].get_label(),
+								(*all_states[k])[i].get_sink().value()
+								);
+						}
+					}
+
+					if (sink >= old_size)
+						sink = parent[sink-old_size];
+
+					parent += sink;
+					clones[sink][level[k]] = k;
+
+				}
+
+				// Redirect the transition to state k
+				j = 0;
+				while((*all_states[split])[j].get_sink().value() != split_p)
+					j++;
+				(*all_states[split])[j].assign(split,
+					(*all_states[split])[j].get_label(), k);
+
+
+				// Re-examine the states in the cycle up to where the cycle 
+				// was split.
+				
+				p = (*all_states[c])[last_transition[c]].get_sink().value();
+				while (c != split)
+				{
+					j = 0;
+					while((*all_states[c])[j].get_sink().value() != p)
+						j++;
+
+					(*all_states[c]) += (*all_states[c])[j];
+					(*all_states[c]).remove(j);
+					last_transition[c]--;
+					status[c] = 0;
+					
+					p = c;
+					c = prev[prev.size()-1];
+					prev.remove(prev.size()-1);
+
+				}
+
+
+				// Re-examine the transition that was modified
+				j = 0;
+				while((*all_states[split])[j].get_sink().value() != k)
+					j++;
+
+				(*all_states[split]) += (*all_states[split])[j];
+				(*all_states[split]).remove(j);
+				last_transition[split]--;
+
+				// debug output
+				/*
+				std::cout << split << ' ' << split_p << ' ' << k << std::endl;
+				std::cout << level[split] << ' ' << level[split_p] << ' ' << level[k] << ' ' << std::endl;
+				std::cout << "(START) |- " << fm<Label>::start_states[0].value() 
+					<< std::endl;
+					
+				for (i = 0; i < all_states.size(); i++)
+				{
+					for (j = 0; j < (*all_states[i]).size(); j++)
+					{
+						std::cout << last_transition[i] << ": ";
+						std::cout << (*all_states[i])[j] << std::endl;
+					}
+
+					if ((*all_states[i]).final())
+						std::cout << i << " -| (FINAL)" << std::endl;		
+				}
+				*/
+			} // End cloning conditions
+				
+		} 
+		else
+		{
+			// If there are no more transitions to visit on this state,
+			// mark it as previously visited and move to the previous state
+			// in the stack.
+		
+			status[c] = 2;
+			i = prev.size() - 1;
+			if (i >= 0)
+			{
+				c = prev[i];
+				prev.remove(i);
+			}
+			else
+				done = true;
+		}
+	}
+	
+	unattach();
+
+	fm<Label>::reachable_fm();
+	fm<Label>::canonical_numbering();
+	
+	// Copy the contents of this fcm to the fm f
+	for (i = 0; i < fm<Label>::arcs.size(); i++)
+		f.add_instruction(fm<Label>::arcs[i]);
+	f.set_finals(fm<Label>::final_states);
+	f.set_starts(fm<Label>::start_states);
+
+	// Deallocate memory used for inv()
+	for(i = 0; i < inv.size(); i++)
+		delete inv[i];
+
+	return f;
+}

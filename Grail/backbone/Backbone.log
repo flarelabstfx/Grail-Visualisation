@@ -1,0 +1,7 @@
+File created by Cezar Campeanu July 2015
+
+Directory created by Brandon Stewart July 2015 to align Grail+ code with miniGrail code.
+This will allow interchanging the code in LISA and 
+a better inclusion of Grail code as a library.
+
+Base classes of Grail code now moved to backbone directory.
