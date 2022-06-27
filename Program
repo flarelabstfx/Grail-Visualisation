@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Create tikz file from grail input/file.
+
+
+echo "\documentclass{standalone}
+
+\usepackage{tikz}
+
+\begin{document}
+
+\usetikzlibrary {automata}
+\begin{tikzpicture}" > result.tex #Add option for export location
+
+# # Create States
+
+# # # Loop for every state that exists in the grail file, create a state in the tikz file, i.e. add a line of code for it, including if its a staarting or final state.
+input = $1
+while read -r line #[ THERE IS STILL TEXT LEFT TO READ IN THE GRAIL FILE ]
+do
+    if [STATE IS A STARTING STATE] -> [FIRSTLINE | awk '{print $1;}']
+    then
+
+    elif [STATE IS A FINAL STATE]
+    then
+
+    else
+        #Take note of both states on a line, there may be states that have a transition going to it but not from it.
+
+done < "$input"
+
+# # # Loop add transitions same as with states.
+
+
+# # Actually create the file
+# # example:
+echo "\end{tikzpicture}
+
+\end{document}" >> result.tex
+
+# Convert tikz file to pdf or other depending on selected option.
