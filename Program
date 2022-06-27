@@ -18,14 +18,17 @@ echo "\documentclass{standalone}
 input = $1
 while read -r line #[ THERE IS STILL TEXT LEFT TO READ IN THE GRAIL FILE ]
 do
-    if [STATE IS A STARTING STATE] -> [FIRSTLINE | awk '{print $1;}']
+    firstWord = "$line" | awk '{print $1;}'
+    lastWord = "$line" | awk '{print $3;}' #SHOULD NOT RELY ON IT BEIGN WORD NUMBER 3!!!
+    if [ "$firstWord" == "(START)" ] # [STATE IS A STARTING STATE]
     then
-
-    elif [STATE IS A FINAL STATE]
+        echo "Starting state."
+    elif [ "$lastWord" == "(FINAL)" ] # [STATE IS A FINAL STATE]
     then
-
+        echo "Final state."
     else
         #Take note of both states on a line, there may be states that have a transition going to it but not from it.
+        echo "Transition."
 
 done < "$input"
 
