@@ -1,0 +1,5 @@
+- Self Looping
+- Bi-directional lines
+
+- Swap x positions of states to get relevant states closer to each other
+- Push All states bove certain point so that you can essentially insert into a certain position of y

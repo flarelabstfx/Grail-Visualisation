@@ -1,44 +1,439 @@
 #!/bin/bash
 
-# Create tikz file from grail input/file.
+###Solve duplicate mystery; Add comments; positioning; automate latex conversion process.
+
+#This prints every run command on screen, good for debugging, comment out otherwise.
+#set -o xtrace
+
+#----------------------------------------
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ---------- STEP 1: Make Initial State List (COMPLETE) ----------
+
+
+
+
+
+
+
+
+
+
+
+#Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
+
+#A list of states including info on if they are starting, and/or final.
+
+stateLabelList1=()
+stateTypeList1=()
+
+transitionStartStateLabelList=()
+transitionTraverseLabelList=()
+transitionEndStateLabelList=()
+
+while read -r line #line becomes each line of the grail code, one line per loop.
+do
+    firstWord=`echo "$line" | awk '{print $1;}'`
+    secondWord=`echo "$line" | awk '{print $2;}'`
+    lastWord=`echo "$line" | awk '{print $NF;}'`
+
+    if [ "$firstWord" == "(START)" ] # [STATE IS A STARTING STATE]
+    then
+        #The S indicates starting state and the dash indicates not a final state. The commas will separate different info for single state.
+        stateLabelList1+=("$lastWord")
+        stateTypeList1+=("S")
+    elif [ "$lastWord" == "(FINAL)" ] # [STATE IS A FINAL STATE]
+    then
+        #The - indicates non-starting state and the F indicates a final state. The commas will separate different info for single state.
+
+        stateLabelList1+=("$firstWord")
+        stateTypeList1+=("F")
+
+    else
+        #The two dashes indicate non-starting non-final state. The commas will separate different info for single state.
+
+        stateLabelList1+=("$firstWord")
+        stateTypeList1+=("-")
+        stateLabelList1+=("$lastWord")
+        stateTypeList1+=("-")
+
+        #Transitions
+        transitionStartStateLabelList+=($firstWord)
+        transitionTraverseLabelList+=($secondWord)
+        transitionEndStateLabelList+=($lastWord)
+
+    fi
+
+done < $1
+
+#echo "${stateLabelList1[@]}"
+#echo "${stateTypeList1[@]}"
+#echo
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ---------- STEP 2: Remove Duplicates ----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
+
+#Same as stateList1 but with no duplicates (starting and final attributes merged)
+
+stateLabelList2=()
+stateTypeList2=()
+
+#The exclamation mar indicates that i should be the index, not the actual element, we do that cause we need the info about the element as well as the index.
+for i in "${!stateLabelList1[@]}"
+do
+    duplicateFound=false
+    saved_j=-1
+    for j in "${!stateLabelList2[@]}"
+    do
+        if [ "${stateLabelList1[$i]}" == "${stateLabelList2[$j]}" ]
+        then
+            duplicateFound=true
+            saved_j=$j
+            break
+        fi
+    done
+
+    if [ $duplicateFound == true ]
+    then
+        if [ "${stateTypeList1[$i]}" == "S" ] #If state from list 1 indicates starting state...
+        then
+            #SET EQUIVALENT STATE IN stateList2 AS A STARTING STATE.
+            if [[ "${stateTypeList2[$saved_j]}" == "F" || "${stateTypeList2[$saved_j]}" == "B" ]]
+            then
+                stateTypeList2[$saved_j]="B" # "B" means both a starting and final state.
+            else
+                stateTypeList2[$saved_j]="S" # "S" means starting state.
+            fi
+        elif [ "${stateTypeList1[i]}" == "F" ] #If state from list 1 indicates starting state...
+        then
+            #SET EQUIVALENT STATE IN stateList2 AS A FINAL STATE.
+            if [[ "${stateTypeList2[$saved_j]}" == "S" || "${stateTypeList2[$saved_j]}" == "B" ]]
+            then
+                stateTypeList2[$saved_j]="B" # "B" means both a starting and final state.
+            else
+                stateTypeList2[$saved_j]="F" # "S" means starting state.
+            fi
+        fi
+    else
+        stateLabelList2+=("${stateLabelList1[$i]}")
+        stateTypeList2+=("${stateTypeList1[$i]}")
+    fi
+
+done
+
+#echo "${stateLabelList2[@]}"
+#echo "${stateTypeList2[@]}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ---------- STEP 3 Calculate State Locations (COMPLETE) ----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#DOES NOT ALLOW FOR GOING UNDER EXISTING TRANSITIONING STATES.
+
+
+
+#Create an array with all the heights of each state, initialize all heights to 0.
+
+stateHeights=()
+for i in "${!stateLabelList2[@]}"
+do
+    stateHeights+=(0)
+done
+
+
+#For every transition, adjust the height accordingly to attempt to not have interfering transitions.
+
+for i in "${!transitionStartStateLabelList[@]}"
+do
+    #These reffer to the start and end state in this current transition, not actual start and final states of the whole machine.
+    startState=${transitionStartStateLabelList[$i]}
+    endState=${transitionStartStateLabelList[$i]}
+
+    #Look though the list of states to find the first and then second instance of either of the two states. The new height of both states should either be 1 plus the greatest height of the inbetween states or the higher of the start or end state, whichever is higher.
+    foundFirstState=false
+    #What height these two states will be set to (SHOULD NOT BE DEFAULT NUMBER SET ON NEXT LINE).
+    newResultingHeight=-20
+    startStateIndex=-1
+    endStateIndex=-1
+    for j in "${!stateLabelList2[@]}"
+    do
+        if [[ "${stateLabelList2[$j]}" == "$startState" || "${stateLabelList2[$j]}" == "$endState" ]]
+        then
+            if [ $foundFirstState == false ]
+            then
+                foundFirstState=true
+                newResultingHeight=${stateHeights[$j]}
+                startStateIndex=$j
+                continue
+            else
+                #Same as with in between states except no plus 1 needed.
+                if ((${stateHeights[$j]} > $newResultingHeight)) #WRONG SYNTAX!!!!
+                then
+                    newResultingHeight=${stateHeights[$j]}
+                fi
+                endStateIndex=$j
+                break
+            fi
+        fi
+
+        #For in between states only!
+        if [ $foundFirstState == true ]
+        then
+            #ALMOST FOR SURE THIS IS WRONG SYNTAX!!!
+            if (($((${stateHeights[$j]}+1)) > $newResultingHeight)) #WRONG SYNTAX!!!!
+            then
+                newResultingHeight=$((${stateHeights[$j]}+1)) #WRONG SYNTAX!!!!!!!
+            fi
+        fi
+    done
+
+    #Now that new height was found, apply new height to both states.
+    stateHeights[$startStateIndex]=$newResultingHeight
+    stateHeights[$endStateIndex]=$newResultingHeight
+
+done
+
+#echo ${stateHeights[@]}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ---------- STEP 4 Create states in tikz code (COMPLETE) ----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#We create a file called result.tex and put this text in it at the start, since the starting part will always be the same regarless of the grail input.
 echo "\documentclass{standalone}
 
 \usepackage{tikz}
 
 \begin{document}
 
-\usetikzlibrary {automata}
-\begin{tikzpicture}" > result.tex #Add option for export location
+\usetikzlibrary {automata,positioning}
+\begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto]
+" > result.tex #Potential additional feature: Add option for export location (depends on if you can contrl that properly already)
 
-# # Create States
+#Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
+#for i in "${!stateLabelList2[@]}"
+#do
 
-# # # Loop for every state that exists in the grail file, create a state in the tikz file, i.e. add a line of code for it, including if its a staarting or final state.
-input = $1
-while read -r line #[ THERE IS STILL TEXT LEFT TO READ IN THE GRAIL FILE ]
+#    echo -n "\node[state" >> result.tex
+
+#    if [[ "${stateTypeList2[i]}" == "S" || "${stateTypeList2[i]}" == "B" ]]
+#    then
+#       echo -n ",initial" >> result.tex
+#    fi
+#   if [[ "${stateTypeList2[i]}" == "F" || "${stateTypeList2[i]}" == "B" ]]
+#    then
+#       echo -n ",accepting" >> result.tex
+#    fi
+
+#    echo -n "] (${stateLabelList2[i]})" >> result.tex
+#    if [ $i != 0 ]
+#   then
+#        echo -n " [above right=of ${stateLabelList2[$((i-1))]}]" >> result.tex
+#    fi
+#    echo " {\$${stateLabelList2[i]}$};" >> result.tex
+
+#done
+
+
+
+
+
+#Above is old version before custom positioning for neatness sake.
+for i in "${!stateLabelList2[@]}"
 do
-    firstWord = "$line" | awk '{print $1;}'
-    lastWord = "$line" | awk '{print $3;}' #SHOULD NOT RELY ON IT BEIGN WORD NUMBER 3!!!
-    if [ "$firstWord" == "(START)" ] # [STATE IS A STARTING STATE]
-    then
-        echo "Starting state."
-    elif [ "$lastWord" == "(FINAL)" ] # [STATE IS A FINAL STATE]
-    then
-        echo "Final state."
-    else
-        #Take note of both states on a line, there may be states that have a transition going to it but not from it.
-        echo "Transition."
 
-done < "$input"
+    echo -n "\node[state" >> result.tex
+
+    if [[ "${stateTypeList2[$i]}" == "S" || "${stateTypeList2[$i]}" == "B" ]]
+    then
+       echo -n ",initial" >> result.tex
+    fi
+    if [[ "${stateTypeList2[$i]}" == "F" || "${stateTypeList2[$i]}" == "B" ]]
+    then
+       echo -n ",accepting" >> result.tex
+    fi
+
+    echo "] (${stateLabelList2[$i]}) at ($i,${stateHeights[$i]}) {\$${stateLabelList2[$i]}$};" >> result.tex
+
+done
+
+
+
+
+
+
+
+
+
+
+# ---------- STEP 4 Create transitions in tikz code ----------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+echo -n "\path[->] " >> result.tex
+
+for i in "${!transitionStartStateLabelList[@]}"
+do
+
+    echo "(${transitionStartStateLabelList[$i]}) edge node {${transitionTraverseLabelList[$i]}} (${transitionEndStateLabelList[$i]})" >> result.tex
+
+done
+
+echo ";" >> result.tex
+
+
+
+
+
+
+
 
 # # # Loop add transitions same as with states.
 
+#echo "\path[->] (q_0) edge node {0} (q_1)
+#(q_1) edge node {1} (q_3)
+#edge [loop above] node {0} ()
+#edge [loop below] node {1} ();" >> result.tex
 
-# # Actually create the file
-# # example:
-echo "\end{tikzpicture}
+echo "
+\end{tikzpicture}
 
 \end{document}" >> result.tex
 
 # Convert tikz file to pdf or other depending on selected option.
+
+
+#Optional??
+pdflatex result.tex
+evince result.pdf
