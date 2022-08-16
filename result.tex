@@ -8,17 +8,19 @@
 \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto]
 
 \node[state,initial] (0) at (0,1) {$0$};
-\node[state,initial] (1) at (1,3) {$1$};
-\node[state] (2) at (2,4) {$2$};
-\node[state] (3) at (3,7) {$3$};
-\node[state,accepting] (5) at (4,7) {$5$};
+\node[state,initial] (6) at (1,4) {$6$};
+\node[state,initial,accepting] (3) at (2,0) {$3$};
+\node[state] (1) at (3,3) {$1$};
+\node[state,accepting] (5) at (4,0) {$5$};
+\node[state] (7) at (5,6) {$7$};
+\node[state,accepting] (9) at (6,0) {$9$};
+\node[state,accepting] (11) at (7,6) {$11$};
 \path[->] (0) edge node {a} (1)
-(1) edge node {a} (1)
-(1) edge node {b} (2)
-(2) edge node {c} (3)
-(3) edge node {d} (2)
-(3) edge node {b} (0)
-(3) edge node {b} (5)
+(1) edge node {c} (3)
+(1) edge node {d} (5)
+(6) edge node {b} (7)
+(7) edge node {c} (9)
+(7) edge node {d} (11)
 ;
 
 \end{tikzpicture}
