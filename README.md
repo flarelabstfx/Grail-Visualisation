@@ -75,40 +75,40 @@ That's it! Everything is setup!
         
 --------------------------------------------------
 
-Usefull commands:
+#### Usefull commands:
 
-	Opens up documentation about tikz. Stuff about automata (the stuff we actually care about starts at page 572)
+Opens up documentation about tikz. Stuff about automata (the stuff we actually care about starts at page 572)
 	
-		texdoc tikz
+	texdoc tikz
 		
-	Run my tikz program using the test file containing example grail output (navigate terminal to the directory where it is first):
+Run my tikz program using the test file containing example grail output (navigate terminal to the directory where it is first):
 	
-		./Program ./test
+	./Program ./test
 		
-	Alternativly you can run this to test the other grail output:
+Alternativly you can run this to test the other grail output:
 	
-		./Program ./test_copy
+	./Program ./test_copy
 
-Info about files:
+#### Info about files:
 
-    Grail (Folder): The Grail folder that was downloaded from Github, the setup instructions assumes that you wont be using this folder and will download the most up to date version from Gihub and then do setup for it. If all else fails, you can try using this folder instead but will still have to do the make setup. Otherwise ignore, rename/backup, or remove it.
+- Grail (Folder): The Grail folder that was downloaded from Github, the setup instructions assumes that you wont be using this folder and will download the most up to date version from Gihub and then do setup for it. If all else fails, you can try using this folder instead but will still have to do the make setup. Otherwise ignore, rename/backup, or remove it.
 
-    - test & test_copy: A sample output file from grail that describes a finite automaton that can be used as the input for Program. The 'test' file is an example of an automaton that works well with the algorithm to produce a nice diagram, test_copy is an example of one that works less well and thus can be used to figure out improvment on the current basic algorithm (more info below).
+- test & test_copy: A sample output file from grail that describes a finite automaton that can be used as the input for Program. The 'test' file is an example of an automaton that works well with the algorithm to produce a nice diagram, test_copy is an example of one that works less well and thus can be used to figure out improvment on the current basic algorithm (more info below).
 
-    - Program: Takes in grail file output as input (argument #1) and creates a tikz code file (result.tex) that describes how to constrct a visual representation of the finite automaton. It then converts the tikz code into a pdf image (result.pdf) and displays the pdf (the convertion and displaying of the pdf can be easily disabled by commenting out the last two lines of the code).
+- Program: Takes in grail file output as input (argument #1) and creates a tikz code file (result.tex) that describes how to constrct a visual representation of the finite automaton. It then converts the tikz code into a pdf image (result.pdf) and displays the pdf (the convertion and displaying of the pdf can be easily disabled by commenting out the last two lines of the code).
 
     Example of how I ran Program:
 
     On linux ubuntu I open the terminal in the location of Program. Then run the command `./Program ./test`
 
-    - result.tex: Output tikz file from running Program.
+- result.tex: Output tikz file from running Program.
 
-    - result.pdf: Output pdf file from running Program.
+- result.pdf: Output pdf file from running Program.
 
-    - result.aux & result.log: Useless files that are created during the process of convering the tikz code into pdf. They can be deleted safely but will be re-created when any such new process happends.
+- result.aux & result.log: Useless files that are created during the process of convering the tikz code into pdf. They can be deleted safely but will be re-created when any such new process happends.
 
-    - Strategy Notes: Just a text file with some notes on how the algorithim for organising the arangement of states and transitions in Program can be improved.
+- Strategy Notes: Just a text file with some notes on how the algorithim for organising the arangement of states and transitions in Program can be improved.
 
-    - Random Examples (Folder): Just a bunch of random old files with examples of tikz code and pdf diagrams.
+- Random Examples (Folder): Just a bunch of random old files with examples of tikz code and pdf diagrams.
     
-    - Grail-3.4.5.tar.gz & install-tl-unx.tar.gz: Files I used as part of the setup process, use these only if you can't download them normally as these ones may be out of date.
+- Grail-3.4.5.tar.gz & install-tl-unx.tar.gz: Files I used as part of the setup process, use these only if you can't download them normally as these ones may be out of date.
