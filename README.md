@@ -77,7 +77,7 @@ That's it! Everything is setup!
 
 #### Usefull commands:
 
-Opens up documentation about tikz. Stuff about automata (the stuff we actually care about starts at page 572)
+Opens up documentation about tikz. Stuff about automata (the stuff we actually care about starts at page 572):
 	
 	texdoc tikz
 		
@@ -99,7 +99,9 @@ Alternativly you can run this to test the other grail output:
 
     Example of how I ran Program:
 
-    On linux ubuntu I open the terminal in the location of Program. Then run the command `./Program ./test`
+    On linux ubuntu I open the terminal in the location of Program. Then run the command 
+    
+      ./Program ./test
 
 - result.tex: Output tikz file from running Program.
 
