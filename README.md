@@ -28,13 +28,13 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
         
 	Run this command in terminal:
                 
-        	sudo apt install g++ make
+       sudo apt install g++ make
 
 3. Run make command to create those 'bin' files:
 	
 	Navigate the terminal to the directory inside the new Grail folder (the one with Makefile in it) then run this command (no seriously this is it):
             
-            make
+       make
                 
 	Now the bin files should be created (yes, key word is should).
             
@@ -46,7 +46,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
             
 	Once extracted, the 'install-tl' file inside is the one we care about. Navigate the terminal to the location of 'install-tl' and run this command:
             
-            sudo ./install-tl
+       sudo ./install-tl
             
 	After a bit, it will prompt you with some options, press 'i' to select the 'start installation to hard disk' option and press enter. Afterwards it should take quite a while to install (you will be able to see the progress and get a decent sense of how much longer until it's done). 
 
@@ -54,21 +54,21 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
         
 	Navigate to your home folder and locate the '.bashrc' file ('.profile' may be an alternative file you can use instead). It is a hidden file, so if you can't see it, hit Ctrl+h to reveal hidden files. Open the file and add this text (the 3 'export' lines below) to the bottom of it to add to your path variable (WARNING: You may need to edit these commands slightly depending on your version of texlive, it's mainly the 2022 part that is likely to change with time, but feel free to check all these paths in your file explorer to see if they are there and update them for your needs, you can change this later if it doesn't work).
                 
-            export PATH=$PATH:/usr/local/texlive/2022/bin/x86_64-linux
-            export MANPATH=/usr/local/texlive/2022/texmf-dist/doc/man
-            export INFOPATH=/usr/local/texlive/2022/texmf-dist/doc/info
+       export PATH=$PATH:/usr/local/texlive/2022/bin/x86_64-linux
+       export MANPATH=/usr/local/texlive/2022/texmf-dist/doc/man
+       export INFOPATH=/usr/local/texlive/2022/texmf-dist/doc/info
                 
 	Note: It is likely that only the first line is needed but texlive asks you to add the MANPATH and INFOPATH stuff so I included it just in case.
         
 	When finished, save the file, then type this command in terminal to test if step 4 and 5 are working, if the command is unrecognised or not found then it's not working (try restarting terminal):
             
-            tlmgr --version
+       tlmgr --version
         
 5. Miscellanious Packages:
         
 	My program I wrote makes use of evince, so in order to use it, install it with this command:
             
-            sudo apt install evince
+       sudo apt install evince
                 
                 
 That's it! Everything is setup!
