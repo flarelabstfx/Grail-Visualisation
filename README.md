@@ -60,9 +60,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
                 
 	Note: It is likely that only the first line is needed but texlive asks you to add the MANPATH and INFOPATH stuff so I included it just in case.
         
-	When finished, save the file, then type this command in terminal to test if step 4 and 5 are working, if the command is unrecognised or not found then it's not working (try restarting terminal):
-            
-       tlmgr --version
+	When finished, save the file, then type `tlmgr --version` in terminal to test if step 4 and 5 are working, if the command is unrecognised or not found then it's not working. If it is not working, try restarting the terminal, then run the command again. If that does not help, revisit steps 4 and 5 to try and determine the issue. I would recommend checking the file paths of the export lines as a first troubleshooting step, try putting an export line into terminal and then have terminal echo the corresponding path variable to see if it updated properly and also check if the file paths actually exist (note only the PATH varable matters for getting this to work).
         
 5. Miscellanious Packages:
         
@@ -71,7 +69,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
        sudo apt install evince
                 
                 
-That's it! Everything is setup!
+That's it! Everything is setup! You should now be able to run commands like `texdox tikz` & `pdflatex`
         
 --------------------------------------------------
 
@@ -88,6 +86,10 @@ Run my tikz program using the test file containing example grail output (navigat
 Alternativly you can run this to test the other grail output:
 	
 	./Program ./test_copy
+	
+Convert tikz code (.tex file) into a pdf (will also create a useless .aux and .log file that you can ignore):
+
+	pdflatex PATH_OF_TEX_FILE
 
 #### Info about files:
 
