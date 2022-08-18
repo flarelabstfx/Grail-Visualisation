@@ -1,7 +1,5 @@
 #!/bin/bash
 
-###Solve duplicate mystery; Add comments; positioning; automate latex conversion process.
-
 #This prints every run command on screen, good for debugging, comment out otherwise.
 #set -o xtrace
 
@@ -326,35 +324,7 @@ echo "\documentclass{standalone}
 \begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto]
 " > result.tex #Potential additional feature: Add option for export location (depends on if you can contrl that properly already)
 
-#Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
-#for i in "${!stateLabelList2[@]}"
-#do
-
-#    echo -n "\node[state" >> result.tex
-
-#    if [[ "${stateTypeList2[i]}" == "S" || "${stateTypeList2[i]}" == "B" ]]
-#    then
-#       echo -n ",initial" >> result.tex
-#    fi
-#   if [[ "${stateTypeList2[i]}" == "F" || "${stateTypeList2[i]}" == "B" ]]
-#    then
-#       echo -n ",accepting" >> result.tex
-#    fi
-
-#    echo -n "] (${stateLabelList2[i]})" >> result.tex
-#    if [ $i != 0 ]
-#   then
-#        echo -n " [above right=of ${stateLabelList2[$((i-1))]}]" >> result.tex
-#    fi
-#    echo " {\$${stateLabelList2[i]}$};" >> result.tex
-
-#done
-
-
-
-
-
-#Above is old version before custom positioning for neatness sake.
+#Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting and/or a final state and will add the according labels.
 for i in "${!stateLabelList2[@]}"
 do
 
@@ -419,21 +389,18 @@ echo ";" >> result.tex
 
 
 
-# # # Loop add transitions same as with states.
 
-#echo "\path[->] (q_0) edge node {0} (q_1)
-#(q_1) edge node {1} (q_3)
-#edge [loop above] node {0} ()
-#edge [loop below] node {1} ();" >> result.tex
+
+
 
 echo "
 \end{tikzpicture}
 
 \end{document}" >> result.tex
 
-# Convert tikz file to pdf or other depending on selected option.
 
 
-#Optional
+
+#Optional Conversion to pdf and viewing of it.
 pdflatex result.tex
 evince result.pdf
