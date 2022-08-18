@@ -60,7 +60,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
                 
 	Note: It is likely that only the first line is needed but texlive asks you to add the MANPATH and INFOPATH stuff so I included it just in case.
         
-	When finished, save the file, then type `tlmgr --version` in terminal to test if step 4 and 5 are working, if the command is unrecognised or not found then it's not working. If it is not working, try restarting the terminal, then run the command again. If that does not help, revisit steps 4 and 5 to try and determine the issue. I would recommend checking the file paths of the export lines as a first troubleshooting step, try putting an export line into terminal and then have terminal echo the corresponding path variable to see if it updated properly and also check if the file paths actually exist (note only the PATH varable matters for getting this to work).
+	When finished, save the file, then type `tlmgr --version` in terminal to test if step 4 and 5 are working, if the command is unrecognised or not found then it's not working. If it is not working, try restarting the terminal, then run the command again. If that does not help, revisit steps 4 and 5 to try and determine the issue. I would recommend checking the file paths of the export lines as a first troubleshooting step. Try putting an export line into terminal and then have terminal echo the corresponding path variable to see if it updated properly and also check if the file paths actually exist (note only the PATH varable matters for getting this to work).
         
 5. Miscellanious Packages:
         
@@ -97,7 +97,7 @@ Convert tikz code (.tex file) into a pdf (will also create a useless .aux and .l
 
 - test & test_copy: A sample output file from grail that describes a finite automaton that can be used as the input for Program. The 'test' file is an example of an automaton that works well with the algorithm to produce a nice diagram, test_copy is an example of one that works less well and thus can be used to figure out improvment on the current basic algorithm (more info below).
 
-- Program: Takes in grail file output as input (argument #1) and creates a tikz code file (result.tex) that describes how to constrct a visual representation of the finite automaton. It then converts the tikz code into a pdf image (result.pdf) and displays the pdf (the convertion and displaying of the pdf can be easily disabled by commenting out the last two lines of the code).
+- Program: Takes in grail file output as input (argument #1) and creates a tikz code file (result.tex) that describes how to constrct a visual representation of the finite automaton (more about the algorithm below). It then converts the tikz code into a pdf image (result.pdf) and displays the pdf (the convertion and displaying of the pdf can be easily disabled by commenting out the last two lines of the code).
 
     Example of how I ran Program:
 
@@ -116,3 +116,15 @@ Convert tikz code (.tex file) into a pdf (will also create a useless .aux and .l
 - Random Examples (Folder): Just a bunch of random old files with examples of tikz code and pdf diagrams.
     
 - Grail-3.4.5.tar.gz & install-tl-unx.tar.gz: Files I used as part of the setup process, use these only if you can't download them normally as these ones may be out of date.
+
+--------------------------------------------------
+
+#### About Program's Algorithm:
+
+The method that Program currently uses into order to decide where to put states (i.e. decide the value of each state's x and y values) is as follows:
+- Each state's x value will simply be determined by which state the program saw first. For example the first state it found will get an x of 1, the second will get an x of 2 and so on.
+- For the y values, create an array the size of the number of states. Initialise all values in the array and thus all the y values to 0. 
+- For every transition that exists that connect state p and state q in this automaton...
+	- Determine which states x-wise exist between states p and q, then find out which one of them has the highest y value. Then add 1 to that value. Then compare this value to the heights (y values) of state p and q. Out of those three numbers, the highest will be the new y value for states p and q.
+
+This method is simple and relativly clean and easy to build on but has some issues, notes about these and ideas on how to fix them are in the 'Strategy Notes' text file.
