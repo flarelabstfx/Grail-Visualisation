@@ -22,7 +22,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
 
 1. Get Grail Files:
         
-	Go to www.csit.upei.ca/theory/ and download latest version of grail, then extract it. If you cannot download it, you can use the 'Grail-3.4.5.tar.gz' file included in this git repo.
+	Go to www.csit.upei.ca/theory/ and download latest version of grail, then extract it. If you cannot download it, you can use the 'Grail-3.4.5.tar.gz' file included in this git repo (which may be out of date so use only if needed).
 
 2. Install make and g++:
         
@@ -32,7 +32,7 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
 
 3. Run make command to create those 'bin' files:
 	
-	Navigate the terminal to the directory inside the new Grail folder (the one with Makefile in it) then run this command (no seriously this is it):
+	Navigate the terminal to the directory inside the new extracted Grail folder (the one with Makefile in it) then run this command (no seriously this is it):
             
        make
                 
@@ -42,17 +42,17 @@ Note: This process was completed in Linux Ubuntu, my understanding is that the p
         
 	(If you cannot get or download the file using the below instructions, use the 'install-tl-unx.tar.gz' file already included in this repo, again, it might be out of date, so use only if needed)
             
-	Navigate to latex-project.org/get/ . Then, scroll down slightly to see the tex distributions for different operating systems. Select 'TeX Live distribution' under the Linux option. Near the top, there will be something that says 'All the ways to acquire TeX Live'. Click on the 'download' option under that. On this new page, one of the first links is for 'install-tl-unx.tar.gz' click that which will download a zip file, extract it.
+	Navigate to https://www.latex-project.org/get/ . Then, scroll down slightly to see the tex distributions for different operating systems. Select 'TeX Live distribution' link that is under the Linux option. On the resulting page, near the top, there will be something that says 'All the ways to acquire TeX Live'. Click on the 'download' option under that. On this new page, one of the first links is for 'install-tl-unx.tar.gz' click that which will download the file, extract it.
             
-	Once extracted, the 'install-tl' file inside is the one we care about. Navigate the terminal to the location of 'install-tl' and run this command:
+	Once extracted, the 'install-tl' file inside the extracted folder is the one we care about. Navigate the terminal to the location of 'install-tl' and run this command:
             
        sudo ./install-tl
             
-	After a bit, it will prompt you with some options, press 'i' to select the 'start installation to hard disk' option and press enter. Afterwards it should take quite a while to install (you will be able to see the progress and get a decent sense of how much longer until it's done). 
+	After a moment, it will prompt you with some options, press 'i' (case insensitive) to select the 'start installation to hard disk' option and press enter. Afterwards it should take quite a while to install. You will be able to see the progress and get a decent sense of how much longer until it's done, for me it took about an hour.
 
 5. Update the PATH variable (and optionally MANPATH and INFOPATH) so that texlive works:
         
-	Navigate to your home folder and locate the '.bashrc' file ('.profile' may be an alternative file you can use instead). It is a hidden file, so if you can't see it, hit Ctrl+h to reveal hidden files. Open the file and add this text (the 3 'export' lines below) to the bottom of it to add to your path variable (WARNING: You may need to edit these commands slightly depending on your version of texlive, it's mainly the 2022 part that is likely to change with time, but feel free to check all these paths in your file explorer to see if they are there and update them for your needs, you can change this later if it doesn't work).
+	Navigate to your home folder and locate the '.bashrc' file ('.profile' may be an alternative file you can use instead). It is a hidden file, so if you can't see it, hit Ctrl+h to reveal hidden files. Open the file and add the text below (the 3 'export' lines) to the bottom of it, this will add texlive to your path variables. WARNING: You may need to edit these lines of code slightly depending on your version of texlive, it's mainly the 2022 part that is most likely to change with time. Use your file explorer to navigate to the file paths shown in these three lines of code to check if they actually exist. If for example, no 2022 folder exists but a 2023 fodler exists you would change 2022 to 2023 in all three of these lines of code.
                 
        export PATH=$PATH:/usr/local/texlive/2022/bin/x86_64-linux
        export MANPATH=/usr/local/texlive/2022/texmf-dist/doc/man
