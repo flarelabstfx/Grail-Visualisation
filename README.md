@@ -3,12 +3,12 @@
 ### Setup Process for Linux:
 
 #### WARNING:
-The current 'Grail-3.4.5' folder may have missing or corrupted files in the bin folder. This should not matter if you follow this guide as it will guide you to download and generate your own Grail folder to make sure you have the most up to date version anyway. The Grail folder that is already contained here should be used as a last resort (you can also re-extract from the tar.gz file for extra caution). Even if you do, you will need to follow all the steps after step 1 (assuming the files in the bin folder are missing or corrupted, if they are corrupted, delete them before regenerating them using the below steps).
+The current 'Grail-3.4.5' folder may have missing or corrupted files in the bin folder. This should not matter if you follow this guide as it will guide you to download and generate your own Grail folder to make sure you have the most up to date version anyway. The Grail folder that is already contained in this repo should be used as a last resort (you can also re-extract from the tar.gz file for extra caution). Even if you do, you will need to follow all the steps after step 1 (assuming the files in the bin folder are missing or corrupted, if they are corrupted, delete them before regenerating them using the below steps).
 
-#### About the Grail setup process:
+#### About the setup process:
 The main thing you need to do is download the grail files and get them working which mainly means that you have it's 'bin' folder full of files with are different utilities that let you do various things with automata, like converting from a context free language to a regular expression for example. We'll also be installing texlive and evince.
 
-Here are the things you need to do to setup Grail (actual details and instructions are below these 'summary' steps):
+Here are the things you need to do to be fully setup (actual details and instructions are below these 'summary' steps):
 
 1. Get Grail Files
 2. Install make and g++
@@ -16,7 +16,7 @@ Here are the things you need to do to setup Grail (actual details and instructio
 4. Install texlive
 5. Update the PATH variable (and optionally MANPATH and INFOPATH) so that texlive works
 
-Note: This process was completed in Linux Ubuntu, my understanding is that the process is significantly easier on Mac (Windows maybe but there may be complications as far as getting a linux-like terminal working), however this guide may not 100% apply to a Mac setup and you may need further help/guidance if not using Linux Ubuntu.
+Note: This process was completed in Linux Ubuntu, my understanding is that the process is significantly easier on Mac (Windows maybe but there may be complications as far as getting a linux-like terminal working), however this guide may not 100% apply to other operating systems and you may need further help/guidance if not using Linux Ubuntu.
 
 #### Setup instrctions in detail:
 
