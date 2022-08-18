@@ -2,4 +2,7 @@
 - Bi-directional lines
 
 - Swap x positions of states to get relevant states closer to each other
-- Push All states bove certain point so that you can essentially insert into a certain position of y
+- Push All states above certain point so that you can essentially insert into a certain position of y
+- Multiply all x and/or y values by a certain editable constant. Even could be an adjustable option for users.
+
+- Remember this algorithim does not account for transitions being able to go underneeth states as it only looks for the highest value. This would likely be a good one to add early one as it would still remain as a good starting point for improvment strategies that build on this.

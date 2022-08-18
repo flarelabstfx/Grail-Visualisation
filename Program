@@ -434,6 +434,6 @@ echo "
 # Convert tikz file to pdf or other depending on selected option.
 
 
-#Optional??
+#Optional
 pdflatex result.tex
 evince result.pdf
