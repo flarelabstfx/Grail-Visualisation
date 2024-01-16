@@ -3,33 +3,7 @@
 #This prints every run command on screen, good for debugging, comment out otherwise.
 #set -o xtrace
 
-#----------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ---------- STEP 1: Make Initial State List (COMPLETE) ----------
-
-
-
-
-
-
-
-
-
-
 
 #Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
 
@@ -81,35 +55,7 @@ done < $1
 #echo "${stateTypeList1[@]}"
 #echo
 
-
-
-
-
-
-
-
-
-
-
-
-
 # ---------- STEP 2: Remove Duplicates ----------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting or final state and will
 
@@ -164,51 +110,9 @@ done
 #echo "${stateLabelList2[@]}"
 #echo "${stateTypeList2[@]}"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ---------- STEP 3 Calculate State Locations (COMPLETE) ----------
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #DOES NOT ALLOW FOR GOING UNDER EXISTING TRANSITIONING STATES.
-
-
 
 #Create an array with all the heights of each state, initialize all heights to 0.
 
@@ -217,7 +121,6 @@ for i in "${!stateLabelList2[@]}"
 do
     stateHeights+=(0)
 done
-
 
 #For every transition, adjust the height accordingly to attempt to not have interfering transitions.
 
@@ -273,45 +176,7 @@ done
 
 #echo ${stateHeights[@]}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 # ---------- STEP 4 Create states in tikz code (COMPLETE) ----------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #We create a file called result.tex and put this text in it at the start, since the starting part will always be the same regarless of the grail input.
 echo "\documentclass{standalone}
@@ -343,33 +208,7 @@ do
 
 done
 
-
-
-
-
-
-
-
-
-
 # ---------- STEP 4 Create transitions in tikz code ----------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 echo -n "\path[->] " >> result.tex
 
@@ -382,24 +221,10 @@ done
 
 echo ";" >> result.tex
 
-
-
-
-
-
-
-
-
-
-
-
 echo "
 \end{tikzpicture}
 
 \end{document}" >> result.tex
-
-
-
 
 #Optional Conversion to pdf and viewing of it.
 pdflatex result.tex
