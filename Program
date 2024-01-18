@@ -186,7 +186,7 @@ echo "\documentclass{standalone}
 \begin{document}
 
 \usetikzlibrary {automata,positioning}
-\begin{tikzpicture}[shorten >=1pt,node distance=2cm,on grid,auto]
+\begin{tikzpicture}[node distance=2cm]
 " > result.tex #Potential additional feature: Add option for export location (depends on if you can contrl that properly already)
 
 #Now we will create a line in the tikz code that creates a state for every state we can find in the grail code. The loop will detect if the line of code in the grail file indicates a starting and/or a final state and will add the according labels.
@@ -215,7 +215,12 @@ echo -n "\path[->] " >> result.tex
 for i in "${!transitionStartStateLabelList[@]}"
 do
 
-    echo "(${transitionStartStateLabelList[$i]}) edge node {${transitionTraverseLabelList[$i]}} (${transitionEndStateLabelList[$i]})" >> result.tex
+    echo -n "(${transitionStartStateLabelList[$i]}) edge[" >> result.tex
+    if [[ "${transitionStartStateLabelList[$i]}" == "${transitionEndStateLabelList[$i]}" ]]
+    then
+        echo -n "loop above" >> result.tex
+    fi
+    echo "] node[align=center, anchor=center, above, sloped] {${transitionTraverseLabelList[$i]}} (${transitionEndStateLabelList[$i]})" >> result.tex
 
 done
 
