@@ -228,4 +228,10 @@ echo "
 
 #Optional Conversion to pdf and viewing of it.
 pdflatex result.tex
-evince result.pdf
+if [ command -v evince &> /dev/null ]
+then
+    evince result.pdf
+elif [ "$(uname)" == "Darwin" ]
+then
+    open result.pdf
+fi
