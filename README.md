@@ -74,21 +74,17 @@ Opens up documentation about tikz. Stuff about automata (the stuff we actually c
 	
 	texdoc tikz
 		
-Run my tikz program using the test file containing example grail output (navigate terminal to the directory where it is first):
+Run my tikz program using a test file (for some number N) containing example grail output (navigate terminal to the directory where it is first):
 	
-	./Program ./test
+	bash Program testN.txt
 		
-Alternativly you can run this to test the other grail output:
-	
-	./Program ./test_copy
-	
 Convert tikz code (.tex file) into a pdf (will also create a useless .aux and .log file that you can ignore):
 
 	pdflatex PATH_OF_TEX_FILE
 
 #### Info about files:
 
-- test & test_copy: A sample output file from grail that describes a finite automaton that can be used as the input for Program. The 'test' file is an example of an automaton that works well with the algorithm to produce a nice diagram, test_copy is an example of one that works less well and thus can be used to figure out improvment on the current basic algorithm (more info below).
+- testN.txt: Sample output files from grail that describe a finite automaton that can be used as the input for Program. Some test files are examples of automata that work well with the algorithm to produce a nice diagram, while others are examples of those that work less well and thus can be used to figure out improvment on the current basic algorithm (more info below).
 
 - Program: Takes in grail file output as input (argument #1) and creates a tikz code file (result.tex) that describes how to constrct a visual representation of the finite automaton (more about the algorithm below). It then converts the tikz code into a pdf image (result.pdf) and displays the pdf (the convertion and displaying of the pdf can be easily disabled by commenting out the last two lines of the code).
 
@@ -96,7 +92,7 @@ Convert tikz code (.tex file) into a pdf (will also create a useless .aux and .l
 
     On linux ubuntu I open the terminal in the location of Program. Then run the command 
     
-      ./Program ./test
+      bash Program testN.txt
 
 - result.tex: Output tikz file from running Program.
 
