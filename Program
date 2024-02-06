@@ -227,11 +227,11 @@ do
     then
         echo -n "loop above" >> result.tex
     fi
-    echo "] node[align=center, anchor=center, above, sloped] {${transitionTraverseLabelList[$i]}} (${transitionEndStateLabelList[$i]})" >> result.tex
+    echo "] node[align=center, anchor=center, above, sloped] {${transitionTraverseLabelList[$i]}} (${transitionEndStateLabelList[$i]});" >> result.tex
 
 done
 
-echo ";" >> result.tex
+#echo ";" >> result.tex
 
 echo "
 \end{tikzpicture}
