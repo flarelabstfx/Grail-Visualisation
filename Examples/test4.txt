@@ -1,0 +1,17 @@
+(START) |- 0
+(START) |- 1
+0 a 1
+0 b 1
+1 a 2
+2 a 2
+2 b 2
+2 a 3
+2 a 4
+5 b 4
+4 c 2
+4 d 4
+5 a 1
+5 f 5
+1 -| (FINAL)
+3 -| (FINAL)
+5 -| (FINAL)
