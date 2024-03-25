@@ -2,8 +2,7 @@
 
 The Grail+ Visualizer is a software tool for visualizing finite automata produced by [Grail+](http://grail.smcs.upei.ca).
 
-Creator: Alastair May
-Supervisor: [Taylor J. Smith](https://people.stfx.ca/tjsmith/)
+The Grail+ Visualizer was created by Alastair May, under the supervision of [Taylor J. Smith](https://people.stfx.ca/tjsmith/).
 
 ---
 
