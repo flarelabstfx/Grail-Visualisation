@@ -51,9 +51,17 @@ do
 
 done < $1
 
+#echo "State label list"
 #echo "${stateLabelList1[@]}"
+#echo "State type list"
 #echo "${stateTypeList1[@]}"
-#echo
+
+#echo "Transition start state list"
+#echo "${transitionStartStateLabelList[@]}"
+#echo "Transition traverse label list"
+#echo "${transitionTraverseLabelList[@]}"
+#echo "Transition end state label list"
+#echo "${transitionEndStateLabelList[@]}"
 
 # ---------- STEP 2: Remove Duplicates ----------
 
@@ -107,7 +115,9 @@ do
 
 done
 
+#echo "State label list"
 #echo "${stateLabelList2[@]}"
+#echo "State type list"
 #echo "${stateTypeList2[@]}"
 
 # ---------- STEP 3 Calculate State Locations (COMPLETE) ----------
@@ -174,6 +184,7 @@ do
 
 done
 
+#echo "State heights"
 #echo ${stateHeights[@]}
 
 # ---------- STEP 4 Create states in tikz code (COMPLETE) ----------
