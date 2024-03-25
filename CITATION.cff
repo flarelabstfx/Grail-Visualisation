@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: Grail+ Visualizer
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Alastair
+    family-names: May
+    email: x2016owd@stfx.ca
+    affiliation: St. Francis Xavier University
+  - given-names: Taylor
+    family-names: Smith
+    name-particle: J.
+    email: tjsmith@stfx.ca
+    affiliation: St. Francis Xavier University
+    orcid: 'https://orcid.org/0000-0001-7838-3409'
+repository-code: 'https://github.com/flarelabstfx/Grail-Visualisation'
